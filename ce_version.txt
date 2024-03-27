@@ -1,0 +1,5 @@
+P8 Content Platform Engine 5.2.1.5 
+Content Engine Build dap521.005.247 
+Configuration Manager Build cm521.012 
+IBM Content Navigator Build icn203.601.003 
+Content Search Services Client 521 v 5.2.1.5 build 5056 
