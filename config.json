@@ -1,0 +1,23 @@
+{
+  "sourceCPE": "http://xxx:yyy/wsi/FNCEWS40MTOM/",
+  "sourceCPEObjectStore": "XXX",
+  "sourceCPEUsername": "XXX",
+  "sourceCPEPassword": "@$sW0rD",
+  "jaasStanzaName": "FileNetP8WSI",
+  "dbHostname": "jdbc:oracle:thin:@xxx:000:XE",
+  "dbUsername": "XEObj",
+  "dbPassword": "@$$w0rdobj",
+  "documentClass": "Document,CustomObject",
+  "query": "",
+  "phase": "3",
+  "objectClasses": [
+    {
+      "Document": [
+        "document_class=false"
+      ],
+      "NetCoServCo": [
+        "system_id=_example_security"
+      ]
+    }
+  ]
+}
