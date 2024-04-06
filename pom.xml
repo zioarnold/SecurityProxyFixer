@@ -6,18 +6,15 @@
 
     <groupId>r2u.tools</groupId>
     <artifactId>SdiPurchasingSecurityFixer</artifactId>
-    <version>1.0</version>
+    <version>1.1</version>
 
     <properties>
         <maven.compiler.source>7</maven.compiler.source>
         <maven.compiler.target>7</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <start-class>r2u.tools.Main</start-class>
-        <!--        Decommentare stringa sotto per la parte linux-->
-                <filenet.cpe.install.path>${project.basedir}</filenet.cpe.install.path>
-<!--        <filenet.cpe.install.path>S:/JavaProjects/Utils/SdiPurchasingSecurityFixer</filenet.cpe.install.path>-->
     </properties>
-
+    <!--Se vi dovessero mancare delle librerie FNP8, allora procedere con esecuzione dello shell "install_filenetp8_jar.sh"-->
     <dependencies>
         <dependency>
             <groupId>com.ibm.filenet.cpe</groupId>
@@ -49,6 +46,8 @@
             <artifactId>xlxpScannerUtils</artifactId>
             <version>5.2.1.5</version>
         </dependency>
+        <!--suppress VulnerableLibrariesLocal-->
+        <!--X JDK 1.7u80-->
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
@@ -59,20 +58,18 @@
             <artifactId>commons-lang</artifactId>
             <version>2.6</version>
         </dependency>
+        <!--suppress VulnerableLibrariesLocal-->
+        <!--X JDK 1.7u80-->
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>2.5</version>
         </dependency>
+        <!--suppress VulnerableLibrariesLocal -->
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <version>1.2.17</version>
-        </dependency>
-        <dependency>
-            <groupId>com.oracle</groupId>
-            <artifactId>ojdbc7</artifactId>
-            <version>12.1.0.2</version>
         </dependency>
     </dependencies>
 
@@ -81,6 +78,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.6.1</version>
                 <executions>
                     <execution>
                         <id>copy-dependencies</id>
@@ -100,6 +98,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+                <version>3.3.0</version>
                 <configuration>
                     <archive>
                         <manifest>
@@ -114,7 +113,9 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.7.1</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -137,179 +138,14 @@
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
-                    <finalName>${artifactId}-${project.version}</finalName>
+                    <finalName>${project.artifactId}-${project.version}</finalName>
                     <appendAssemblyId>false</appendAssemblyId>
                 </configuration>
             </plugin>
             <plugin>
-                <artifactId>maven-install-plugin</artifactId>
-                <version>2.3.1</version>
-                <inherited>false</inherited>
-                <executions>
-                    <!-- Navigator file -->
-                    <execution>
-                        <id>install-artifacts-filenet:Navigator</id>
-                        <goals>
-                            <goal>install-file</goal>
-                        </goals>
-                        <phase>install</phase>
-                        <configuration>
-                            <file>${filenet.cpe.install.path}/libs/navigatorAPI.jar</file>
-                            <groupId>com.ibm.filenet.cpe</groupId>
-                            <artifactId>navigatorAPI</artifactId>
-                            <!--suppress UnresolvedMavenProperty -->
-                            <version>${icnversion}</version>
-                            <packaging>jar</packaging>
-                            <generatePom>true</generatePom>
-                        </configuration>
-                    </execution>
-                    <!-- CPE Files -->
-                    <execution>
-                        <id>install-artifacts-filenet:Jace</id>
-                        <goals>
-                            <goal>install-file</goal>
-                        </goals>
-                        <phase>install</phase>
-                        <configuration>
-                            <file>${filenet.cpe.install.path}/libs/Jace.jar</file>
-                            <groupId>com.ibm.filenet.cpe</groupId>
-                            <artifactId>Jace</artifactId>
-                            <!--suppress UnresolvedMavenProperty -->
-                            <version>${filenetversion}</version>
-                            <packaging>jar</packaging>
-                            <generatePom>true</generatePom>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>install-artifacts-filenet:javaapi</id>
-                        <goals>
-                            <goal>install-file</goal>
-                        </goals>
-                        <phase>install</phase>
-                        <configuration>
-                            <file>${filenet.cpe.install.path}/libs/javaapi.jar</file>
-                            <groupId>com.ibm.filenet.cpe</groupId>
-                            <artifactId>javaapi</artifactId>
-                            <!--suppress UnresolvedMavenProperty -->
-                            <version>${filenetversion}</version>
-                            <packaging>jar</packaging>
-                            <generatePom>true</generatePom>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>install-artifacts-filenet:log4j</id>
-                        <goals>
-                            <goal>install-file</goal>
-                        </goals>
-                        <phase>install</phase>
-                        <configuration>
-                            <file>${filenet.cpe.install.path}/libs/log4j.jar</file>
-                            <groupId>com.ibm.filenet.cpe</groupId>
-                            <artifactId>log4j</artifactId>
-                            <!--suppress UnresolvedMavenProperty -->
-                            <version>${filenetversion}</version>
-                            <packaging>jar</packaging>
-                            <generatePom>true</generatePom>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>install-artifacts-filenet:stax-api</id>
-                        <goals>
-                            <goal>install-file</goal>
-                        </goals>
-                        <phase>install</phase>
-                        <configuration>
-                            <file>${filenet.cpe.install.path}/cdapi/stax-api.jar</file>
-                            <groupId>com.ibm.filenet.cpe</groupId>
-                            <artifactId>stax-api</artifactId>
-                            <!--suppress UnresolvedMavenProperty -->
-                            <version>${filenetversion}</version>
-                            <packaging>jar</packaging>
-                            <generatePom>true</generatePom>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>install-artifacts-filenet:xlxpScanner</id>
-                        <goals>
-                            <goal>install-file</goal>
-                        </goals>
-                        <phase>install</phase>
-                        <configuration>
-                            <file>${filenet.cpe.install.path}/cdapi/xlxpScanner.jar</file>
-                            <groupId>com.ibm.filenet.cpe</groupId>
-                            <artifactId>xlxpScanner</artifactId>
-                            <!--suppress UnresolvedMavenProperty -->
-                            <version>${filenetversion}</version>
-                            <packaging>jar</packaging>
-                            <generatePom>true</generatePom>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>install-artifacts-filenet:xlxpScannerUtils</id>
-                        <goals>
-                            <goal>install-file</goal>
-                        </goals>
-                        <phase>install</phase>
-                        <configuration>
-                            <file>${filenet.cpe.install.path}/cdapi/xlxpScannerUtils.jar</file>
-                            <groupId>com.ibm.filenet.cpe</groupId>
-                            <artifactId>xlxpScannerUtils</artifactId>
-                            <!--suppress UnresolvedMavenProperty -->
-                            <version>${filenetversion}</version>
-                            <packaging>jar</packaging>
-                            <generatePom>true</generatePom>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>install-artifacts-ojdbc7:ojdbc7</id>
-                        <goals>
-                            <goal>install-file</goal>
-                        </goals>
-                        <phase>install</phase>
-                        <configuration>
-                            <file>${filenet.cpe.install.path}/libs/ojdbc7-12.1.0.2.jar</file>
-                            <groupId>com.oracle.jdbc</groupId>
-                            <artifactId>ojdbc7</artifactId>
-                            <!--suppress UnresolvedMavenProperty -->
-                            <version>12.1.0.2</version>
-                            <packaging>jar</packaging>
-                            <generatePom>true</generatePom>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.gmaven</groupId>
-                <artifactId>groovy-maven-plugin</artifactId>
-                <version>2.0</version>
-                <executions>
-                    <execution>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>execute</goal>
-                        </goals>
-                        <configuration>
-                            <defaults>
-                                <name>Xenu</name>
-                            </defaults>
-                            <source>
-                                String fileContents = new File("${filenet.cpe.install.path}/ce_version.txt").getText('UTF-8')
-                                matcher = (fileContents =~ /(\d\.\d\.\d.\d)/)
-                                String versionCPE = matcher.getAt(0).getAt(1)
-                                // Set version to be used in
-                                project.properties.filenetversion = versionCPE
-
-                                matcher1 = (fileContents =~ /icn\d{3}.\d{3}.\d{3}/)
-                                String versionICN = matcher1.getAt(0)
-                                project.properties.icnversion = versionICN
-                            </source>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
                 <configuration>
                     <source>1.7</source>
                     <target>1.7</target>
@@ -317,5 +153,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
