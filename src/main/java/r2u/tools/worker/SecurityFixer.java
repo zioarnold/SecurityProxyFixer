@@ -73,7 +73,7 @@ public class SecurityFixer {
                                                 String headByRelationByTailId = "";
                                                 if (relationIterator != null && relationIterator.hasNext()) {
                                                     repositoryRow = (RepositoryRow) relationIterator.next();
-                                                    headByRelationByTailId = String.valueOf(repositoryRow.getProperties().getIdValue("head_chronicle_id"));
+                                                    headByRelationByTailId = String.valueOf(repositoryRow.getProperties().getIdValue("head_id"));
                                                 }
                                                 if (!headByRelationByTailId.isEmpty()) {
                                                     saveSecurityProxyToChildDocument(instance.getObjectStore(), fetchedDocument, headByRelationByTailId);
@@ -124,8 +124,8 @@ public class SecurityFixer {
         //Recupero il system_id del documento in anagrafica
         //Nonostante che sia stringa, a db risulta numeric.
         int bo_bu_chronid_ref = 0;
-        if (fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref") != null) {
-            Iterator<?> boBuChronidRefIterator = fetchSystemIdByBOBUChronicleIdRef(fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref"));
+        if (fetchedDocument.getProperties().getStringValue("bo_id_ref") != null) {
+            Iterator<?> boBuChronidRefIterator = fetchSystemIdByBOBUChronicleIdRef(fetchedDocument.getProperties().getStringValue("bo_id_ref"));
             if (boBuChronidRefIterator != null && boBuChronidRefIterator.hasNext()) {
                 RepositoryRow repositoryRow = (RepositoryRow) boBuChronidRefIterator.next();
                 bo_bu_chronid_ref = repositoryRow.getProperties().getInteger32Value("system_id");
@@ -207,8 +207,8 @@ public class SecurityFixer {
     private void buALLandBoBu_empty(Document fetchedDocument, ArrayList<Integer> buAllChronidRef, int bo_bu_chronid_ref) {
         if (buAllChronidRef.isEmpty() && bo_bu_chronid_ref == 0) {
             logger.error("UNABLE TO PROCESS: " + fetchedDocument.getClassName()
-                    + " DUE TO [bo_bu_chronid_ref]: " + fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref")
-                    + " AND [bu_all_chronid_ref]: " + fetchedDocument.getProperties().getStringListValue("bu_all_chronid_ref") + " ARE NULL or EMPTY");
+                    + " DUE TO [bo_id_ref]: " + fetchedDocument.getProperties().getStringValue("bo_id_ref")
+                    + " AND [bu_all_id_ref]: " + fetchedDocument.getProperties().getStringListValue("bu_all_id_ref") + " ARE NULL or EMPTY");
 //            if (netCo.containsKey(String.valueOf(fetchedDocument.getProperties().getInteger32Value("system_id")))) {
 //                String netco_servco = netCo.get(String.valueOf(fetchedDocument.getProperties().getInteger32Value("system_id")));
 //                assignNetCoSecurityProxy(netco_servco, fetchedDocument);
@@ -346,7 +346,7 @@ public class SecurityFixer {
     private Iterator<?> fetchSystemIdByBUALLChronicleIdRef(StringList buAllChronicleIdRef) {
         SearchScope searchScope = new SearchScope(instance.getObjectStore());
         if (buAllChronicleIdRef.size() == 1) {
-            String querySource = "SELECT * FROM acq_anagrafica_bu WHERE Id = " + buAllChronicleIdRef.get(0).toString();
+            String querySource = "SELECT * FROM anagrafica WHERE Id = " + buAllChronicleIdRef.get(0).toString();
             SearchSQL searchSQL = new SearchSQL();
             searchSQL.setQueryString(querySource);
             return searchScope.fetchRows(searchSQL, null, null, Boolean.TRUE).iterator();
@@ -370,7 +370,7 @@ public class SecurityFixer {
      * @return iterator
      */
     private Iterator<?> fetchHeadIdByRelationTailId(String tailId) {
-        String querySource = "SELECT [head_chronicle_id] FROM [acq_relation] WHERE [tail_chronicle_id] = " + tailId;
+        String querySource = "SELECT [head_id] FROM [relation] WHERE [tail_id] = " + tailId;
         SearchSQL searchSQL = new SearchSQL();
         searchSQL.setQueryString(querySource);
         return new SearchScope(instance.getObjectStore()).fetchRows(searchSQL, null, null, Boolean.TRUE).iterator();
@@ -383,7 +383,7 @@ public class SecurityFixer {
      * @return iterator
      */
     private Iterator<?> fetchSystemIdByBOBUChronicleIdRef(String boBuChronicleIdRef) {
-        String querySource = "SELECT [system_id] FROM [acq_anagrafica_bu] WHERE [id] = " + boBuChronicleIdRef;
+        String querySource = "SELECT [system_id] FROM [anagrafica] WHERE [id] = " + boBuChronicleIdRef;
         SearchSQL searchSQL = new SearchSQL();
         searchSQL.setQueryString(querySource);
         return new SearchScope(instance.getObjectStore()).fetchRows(searchSQL, null, null, Boolean.TRUE).iterator();
@@ -397,7 +397,7 @@ public class SecurityFixer {
      * @return iterator
      */
     private static Iterator<?> fetchSecurityProxies(String securityProxies, ObjectStore objectStoreSource) {
-        String querySource = "SELECT * FROM [acq_security_proxy] WHERE [codice] = " + securityProxies;
+        String querySource = "SELECT * FROM [security_proxy] WHERE [codice] = " + securityProxies;
         SearchSQL searchSQL = new SearchSQL();
         searchSQL.setQueryString(querySource);
         return new SearchScope(objectStoreSource).fetchRows(searchSQL, null, null, Boolean.TRUE).iterator();
