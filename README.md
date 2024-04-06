@@ -1,11 +1,11 @@
-# SdiPurchasingSecurityFixer ver1.0 by MrArni_ZIO - WIP
+# SdiPurchasingSecurityFixer ver1.1 by MrArni_ZIO - Released
 ### Description
 Tool dedicato a SdiAcquisti, sviluppato per fixare le security proxy e le security di classi documentali in base ai criteri.
 Nel suo funzionamento il Tool non fa altro che:<br>
 1 - Estrarre ciò che gli si passa in query, o nel caso estrae tutte le classi documentali;<br>
 2 - Per ogni classe documentale, recupera il suo system_id per poi fare delle considerazioni;<br>
 3 - Tool si rivolge al config json nella sezione: `objectClasses -> Document` vede se la classe documentale intanto è presente ed è lavorabile (=true/false).
-`Esempio: acq_example=true` oppure `acq_example=false`<br>
+`Esempio: example=true` oppure `example=false`<br>
 4 - Se è `false`, allora non si fa niente, passa al punto 9;<br>
 5 - Se è `true`, allora tira fuori il suo `security_proxy` ID per eventuale restore;<br>
 6 - Vede se il `system_id` è maggiore di zero e quindi presente nel documento lavorabile, allora 
@@ -19,11 +19,26 @@ oppure se non è stato aggiornato. Se sono uguali non fa niente;<br>
 9 - Fine.<br>
 `P.S. Attenzione, prima di lanciare il tool, bisogna creare delle security_proxy con della convention impostata.`<br>
 `symbolic_name(classe documentale)_netco_security oppure symbolic_name_servco_security`!
+</br>
+Intanto qui la spiegazione delle chiavi su config.json
+### sourceCPE
+Indicare lo WSI del FN di partenza, esempio `http://0.0.0.0:0/wsi/FNCEWS40MTOM/`
+### sourceCPEObjectStore
+Indicare il nome dell'object store
+### sourceCPEUsername
+Indicare lo username che abilitato ad accedere ad ACCE.
+### sourceCPEPassword 
+Indicare relativo password
+### jaasStanzaName
+Deve essere FileNetP8WSI.
 ### documentClass
-Indicare per ora 'Document'
+E' al momento gestito `Document`, ma può ricevere in ingresso `Document,CustomObject,Folder`
 ### query
-Può essere anche vuota. Se è vuota fa una query sulla documentClass.
-### phase
-Attualmente è gestita la fase 3. Cioè security proxy fix.
-### usage
-`java -jar SdiPurchasingSecurityFixer-1.0.jar ./config.json`
+Può essere anche vuota. Se è vuota fa una query sulla documentClass. `Attenzione` però, se scrivete una query vostra a piacere, 
+siate coscienti di modificare in `objectClasses->Document` mettendo a true la classe documentale.</br>
+Esempio della query: `SELECT TOP 3* FROM [object_class] ORDER BY DateCreated DESC` quindi impostare `acq_pon=true`.<br>
+Altrimenti non si fa nulla. 
+### _usage_
+`java -jar path\filename.jar path\config.json`
+#### Nota
+Quando svilupperete ereditando il codice, eseguite prima di tutto il file `install_filenetp8_jar.sh`.
