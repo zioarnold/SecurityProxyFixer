@@ -12,7 +12,7 @@ Nel suo funzionamento il Tool non fa altro che:<br>
  si ridirige verso `config.json` nella sezione `objectClasses -> NetCoServCo`, per vedere se system_id è presente;
 `Esempio: 7272192=_netco_security`<br>
 7 - Se è presente, allora prende il contenuto dopo '='`(_netco_security)` per poi recuperarlo e inserirlo nel documento.
-`(In sostanza diventa, esempio: acq_example_netco_security).`
+`(In sostanza diventa, esempio: object_class_example_netco_security).`
 Ma prima di questo, verifica se nel documento non è presente security_proxy per poi inserirlo, 
 oppure se non è stato aggiornato. Se sono uguali non fa niente;<br>
 8 - Aggiorna la classe documentale e salva le modifiche con nuovo security_proxy e passa al successivo per lavorarlo;<br>
@@ -36,7 +36,7 @@ E' al momento gestito `Document`, ma può ricevere in ingresso `Document,CustomO
 ### query
 Può essere anche vuota. Se è vuota fa una query sulla documentClass. `Attenzione` però, se scrivete una query vostra a piacere, 
 siate coscienti di modificare in `objectClasses->Document` mettendo a true la classe documentale.</br>
-Esempio della query: `SELECT TOP 3* FROM [object_class] ORDER BY DateCreated DESC` quindi impostare `acq_pon=true`.<br>
+Esempio della query: `SELECT TOP 3* FROM [object_class] ORDER BY DateCreated DESC` quindi impostare `object_class=true`.<br>
 Altrimenti non si fa nulla. 
 ### _usage_
 `java -jar path\filename.jar path\config.json`
