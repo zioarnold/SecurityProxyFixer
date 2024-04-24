@@ -82,7 +82,6 @@ public class JSONParser {
             logger.error("servCo is empty. Aborting!");
             System.exit(-1);
         }
-        FNConnector fnConnector = new FNConnector();
         Configurator instance = Configurator.getInstance();
         instance.setUriSource(sourceCPE);
         instance.setSourceCPEObjectStore(sourceCPEObjectStore);
@@ -94,6 +93,7 @@ public class JSONParser {
         instance.setServCo(servCo);
         instance.setDocumentMap(documentMap);
         instance.setQuery(query);
+        FNConnector fnConnector = new FNConnector();
         fnConnector.initWork();
     }
 

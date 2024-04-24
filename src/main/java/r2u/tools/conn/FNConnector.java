@@ -11,15 +11,16 @@ import r2u.tools.config.Configurator;
 import r2u.tools.worker.SecurityFixer;
 
 import javax.security.auth.Subject;
+import java.io.IOException;
 
 public class FNConnector {
-    Configurator instance = Configurator.getInstance();
+    private final Configurator instance = Configurator.getInstance();
     private final static Logger logger = Logger.getLogger(FNConnector.class.getName());
 
     public FNConnector() {
     }
 
-    public void initWork() {
+    public void initWork() throws IOException {
         SecurityFixer securityFixer = new SecurityFixer();
         instance.setObjectStore(getObjectStoreSource());
         securityFixer.startSecurityFix();

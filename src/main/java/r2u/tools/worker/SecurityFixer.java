@@ -3,6 +3,7 @@ package r2u.tools.worker;
 import com.filenet.api.collection.StringList;
 import com.filenet.api.constants.RefreshMode;
 import com.filenet.api.core.*;
+import com.filenet.api.exception.EngineRuntimeException;
 import com.filenet.api.property.Properties;
 import com.filenet.api.query.RepositoryRow;
 import com.filenet.api.query.SearchSQL;
@@ -13,6 +14,10 @@ import org.apache.log4j.Logger;
 import r2u.tools.config.Configurator;
 import r2u.tools.constants.Constants;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.*;
 
 public class SecurityFixer {
@@ -21,17 +26,18 @@ public class SecurityFixer {
      */
     private final static Logger logger = Logger.getLogger(SecurityFixer.class.getName());
     private final static String SECURITY_PROXY = "security_proxy";
-    Configurator instance = Configurator.getInstance();
+    private final Configurator instance = Configurator.getInstance();
 
     /**
      * Metodo che fa il lavoretto nel ricavare le classi documentali e se sono lavorabili su json, flag è true.
      * Chiamare altri metodi di smistamento per netco o servco.
      */
-    public void startSecurityFix() {
+    public void startSecurityFix() throws IOException {
         long startTime, endTime;
         String[] doc = instance.getDocumentClass().split(",");
         logger.info("Starting security fix...");
         startTime = System.currentTimeMillis();
+
         for (String docClass : doc) {
             switch (docClass) {
                 case "CustomObject":
@@ -43,12 +49,18 @@ public class SecurityFixer {
                     logger.info("Working with docClass " + docClass);
                     logger.info("Fetching data by query: " + instance.getQuery());
                     Iterator<?> iterator = fetchRows(docClass, instance.getQuery(), instance.getObjectStore());
+                    Document fetchedDocument = null;
+                    BufferedWriter readOnlySecurityProxyWriter = null, emptyBuAllChronIdWriter = null;
+                    PrintWriter unManagedErrorsWriter = null;
                     if (iterator != null) {
                         while (iterator.hasNext()) {
                             try {
                                 RepositoryRow repositoryRow = (RepositoryRow) iterator.next();
                                 Properties properties = repositoryRow.getProperties();
-                                Document fetchedDocument = Factory.Document.fetchInstance(instance.getObjectStore(), properties.getIdValue("ID").toString(), null);
+                                fetchedDocument = Factory.Document.fetchInstance(instance.getObjectStore(), properties.getIdValue("ID").toString(), null);
+                                readOnlySecurityProxyWriter = new BufferedWriter(new FileWriter(fetchedDocument.getClassName() + "_read_only_security_proxy.txt", true));
+                                emptyBuAllChronIdWriter = new BufferedWriter(new FileWriter(fetchedDocument.getClassName() + "_empty_bu_all_chronid_ref.txt", true));
+                                unManagedErrorsWriter = new PrintWriter(new FileWriter(fetchedDocument.getClassName() + "_un_managed_errors.txt", true));
                                 //Controllo se la classe documentale e` mappata
                                 if (instance.getDocumentMap().containsKey(fetchedDocument.getClassName())) {
                                     //Controllo se bisogna lavorare sulla classe documentale quindi flag = true
@@ -73,7 +85,7 @@ public class SecurityFixer {
                                                 String headByRelationByTailId = "";
                                                 if (relationIterator != null && relationIterator.hasNext()) {
                                                     repositoryRow = (RepositoryRow) relationIterator.next();
-                                                    headByRelationByTailId = String.valueOf(repositoryRow.getProperties().getIdValue("head_id"));
+                                                    headByRelationByTailId = String.valueOf(repositoryRow.getProperties().getIdValue("head_chronicle_id"));
                                                 }
                                                 if (!headByRelationByTailId.isEmpty()) {
                                                     saveSecurityProxyToChildDocument(instance.getObjectStore(), fetchedDocument, headByRelationByTailId);
@@ -83,15 +95,33 @@ public class SecurityFixer {
                                             }
                                             break;
                                         }
-                                    } else {
-                                        logger.info(fetchedDocument.getClassName() + "is not set up to work on. Skipping...");
                                     }
                                 } else {
-                                    logger.error("NO " + fetchedDocument.getClassName() + " MAPPED IN config.json AT objectClasses -> Document");
+                                    logger.error("NO " + fetchedDocument.getClassName() + " MAPPED IN config_coll.json AT objectClasses -> Document");
                                 }
-                            } catch (Exception e) {
-                                logger.error("SOMETHING WENT WRONG... ", e);
-                                throw new RuntimeException(e);
+                            } catch (EngineRuntimeException e) {
+                                //Produco dei file in cui vengono scritti le informazioni sui documenti che non sono stati processati
+                                //Per motivo di campo read-only quando potrebbe non esserlo
+                                if (e.getExceptionCode().getErrorId().equals("FNRCE0057") && readOnlySecurityProxyWriter != null) {
+                                    logger.error("SOMETHING WENT WRONG... ", e);
+                                    readOnlySecurityProxyWriter.write(Objects.requireNonNull(fetchedDocument).getProperties().getIdValue("ID").toString() + "\n");
+                                    //Per via del dato sporco
+                                } else if (e.getExceptionCode().getErrorId().equals("FNRCA0024") && emptyBuAllChronIdWriter != null) {
+                                    logger.error("SOMETHING WENT WRONG... ", e);
+                                    emptyBuAllChronIdWriter.write(Objects.requireNonNull(fetchedDocument).getProperties().getIdValue("ID").toString() + "\n");
+                                    //Per via di errori non gestiti
+                                } else {
+                                    logger.error("SOMETHING WENT WRONG... ", e);
+                                    e.printStackTrace(unManagedErrorsWriter);
+                                }
+                                //Qualora dovesse capitare errore non gestito
+                            } catch (Exception exception) {
+                                exception.printStackTrace(unManagedErrorsWriter);
+                            }
+                            if (readOnlySecurityProxyWriter != null && emptyBuAllChronIdWriter != null && unManagedErrorsWriter != null) {
+                                readOnlySecurityProxyWriter.close();
+                                emptyBuAllChronIdWriter.close();
+                                unManagedErrorsWriter.close();
                             }
                         }
                     } else {
@@ -100,9 +130,9 @@ public class SecurityFixer {
                 }
                 break;
             }
+            endTime = System.currentTimeMillis();
+            logger.info("Security fixer terminated within: " + DurationFormatUtils.formatDuration(endTime - startTime, Constants.dateTimeFormat, true));
         }
-        endTime = System.currentTimeMillis();
-        logger.info("Security fixer terminated within: " + DurationFormatUtils.formatDuration(endTime - startTime, Constants.dateTimeFormat, true));
     }
 
     /**
@@ -120,12 +150,12 @@ public class SecurityFixer {
      *
      * @param fetchedDocument documento su quale si sta lavora.
      */
-    private void processDefaultDocumentClasses(Document fetchedDocument) {
+    private void processDefaultDocumentClasses(Document fetchedDocument) throws IOException {
         //Recupero il system_id del documento in anagrafica
         //Nonostante che sia stringa, a db risulta numeric.
         int bo_bu_chronid_ref = 0;
-        if (fetchedDocument.getProperties().getStringValue("bo_id_ref") != null) {
-            Iterator<?> boBuChronidRefIterator = fetchSystemIdByBOBUChronicleIdRef(fetchedDocument.getProperties().getStringValue("bo_id_ref"));
+        if (fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref") != null) {
+            Iterator<?> boBuChronidRefIterator = fetchSystemIdByBOBUChronicleIdRef(fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref"));
             if (boBuChronidRefIterator != null && boBuChronidRefIterator.hasNext()) {
                 RepositoryRow repositoryRow = (RepositoryRow) boBuChronidRefIterator.next();
                 bo_bu_chronid_ref = repositoryRow.getProperties().getInteger32Value("system_id");
@@ -162,7 +192,7 @@ public class SecurityFixer {
             }
             if (buAllChronidRef.size() > 1) {
                 String netco_servco;
-                //Verifico se le SYSTEM_ID (bu_all_chronid_ref) recuperate sono IDENTICI a SYSTEM_ID mappate in config.json sotto NetCoServCo,
+                //Verifico se le SYSTEM_ID (bu_all_chronid_ref) recuperate sono IDENTICI a SYSTEM_ID mappate in config_coll.json sotto NetCoServCo,
                 //Allora gli assegno NETCO_SECURITY. Esempio ho un documento con due soltanto system_id e tutte e due sono NETCO.
                 if (systemIds.equals(buAllChronidRef)) {
                     netco_servco = instance.getNetCo().get(String.valueOf(buAllChronidRef.get(0)));
@@ -204,11 +234,17 @@ public class SecurityFixer {
      * @param bo_bu_chronid_ref variabile che contiene system_id
      */
     //TODO: Qualora bo_bu_chronid_ref e bu_all_chronid_ref sono vuoti... procedere al recupero di informazioni in qualche altra maniera.
-    private void buALLandBoBu_empty(Document fetchedDocument, ArrayList<Integer> buAllChronidRef, int bo_bu_chronid_ref) {
+    private void buALLandBoBu_empty(Document fetchedDocument, ArrayList<Integer> buAllChronidRef,
+                                    int bo_bu_chronid_ref) throws IOException {
         if (buAllChronidRef.isEmpty() && bo_bu_chronid_ref == 0) {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(fetchedDocument.getClassName() + "_generic.txt", true));
+            writer.write("UNABLE TO PROCESS: " + fetchedDocument.getClassName()
+                    + " DUE TO [bo_bu_chronid_ref]: " + fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref")
+                    + " AND [bu_all_chronid_ref]: " + fetchedDocument.getProperties().getStringListValue("bu_all_chronid_ref") + " ARE NULL or EMPTY! ID DOC: " + fetchedDocument.getProperties().getIdValue("ID") + "\n");
             logger.error("UNABLE TO PROCESS: " + fetchedDocument.getClassName()
-                    + " DUE TO [bo_id_ref]: " + fetchedDocument.getProperties().getStringValue("bo_id_ref")
-                    + " AND [bu_all_id_ref]: " + fetchedDocument.getProperties().getStringListValue("bu_all_id_ref") + " ARE NULL or EMPTY");
+                    + " DUE TO [bo_bu_chronid_ref]: " + fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref")
+                    + " AND [bu_all_chronid_ref]: " + fetchedDocument.getProperties().getStringListValue("bu_all_chronid_ref") + " ARE NULL or EMPTY");
+            writer.close();
 //            if (netCo.containsKey(String.valueOf(fetchedDocument.getProperties().getInteger32Value("system_id")))) {
 //                String netco_servco = netCo.get(String.valueOf(fetchedDocument.getProperties().getInteger32Value("system_id")));
 //                assignNetCoSecurityProxy(netco_servco, fetchedDocument);
@@ -219,7 +255,7 @@ public class SecurityFixer {
     }
 
     /**
-     * Metodo che verifica la presenza su config.json del @param bo_bu_chronid_ref.
+     * Metodo che verifica la presenza su config_coll.json del @param bo_bu_chronid_ref.
      * Se è presente allora al documento gli si assegna netco, diversamente servco.
      *
      * @param fetchedDocument   documento attuale su cui si lavora
@@ -253,7 +289,8 @@ public class SecurityFixer {
      * @param fetchedDocument   documento attuale su cui si lavora
      * @param objectStoreSource variabile che contiene i dati sull'object store.
      */
-    private static void securityProxySetUp(String netco_servco, Document fetchedDocument, ObjectStore objectStoreSource) {
+    private static void securityProxySetUp(String netco_servco, Document fetchedDocument, ObjectStore
+            objectStoreSource) {
         Id securityProxyIdValue = null;
         try {
             Id oldSecurityProxyId = fetchedDocument.getProperties().getIdValue(SECURITY_PROXY);
@@ -266,30 +303,38 @@ public class SecurityFixer {
                 securityProxyIdValue = securityProxyProperties.getIdValue("ID");
                 CustomObject securityProxyCustomObject = Factory.CustomObject.fetchInstance(objectStoreSource, securityProxyIdValue, null);
                 ObjectReference securityProxy = securityProxyCustomObject.getObjectReference();
+                //Gestione del caso in cui, nel documento il campo security_proxy e` vuoto e quindi NullPointer.
+                //Quindi lo si imposta.
+                if (oldSecurityProxyId == null) {
+                    logger.warn("There's no security_proxy found on document id: " + fetchedDocument.getProperties().getIdValue("ID")
+                            + " security_proxy is null, trying insert a new security_proxy id: " + securityProxyIdValue);
+                    fetchedDocument.getProperties().putObjectValue(SECURITY_PROXY, securityProxy);
+                }
                 //Verifico se nella classe documentale e` gia` presente la security_proxy nuova
                 //Per capirci: se nella classe documentale c'e` gia` la security proxy nuova
                 //Allora non si fa nulla.
                 //Per capirci bis: se nella classe documentale c'e` gia` la security proxy
                 //Ma che son diversi tipo: acq_pon_security != acq_pon_netco_security
                 //Allora gli impasto quella nuova.
-                if (!Objects.requireNonNull(oldSecurityProxyId).equals(securityProxyIdValue)) {
+                else if (!Objects.requireNonNull(oldSecurityProxyId).equals(securityProxyIdValue)) {
                     fetchedDocument.getProperties().putObjectValue(SECURITY_PROXY, securityProxy);
                     logger.info("Replacing old security_proxy Id:  " + oldSecurityProxyId +
                             " with new security_proxy Id: " + securityProxyIdValue);
                     fetchedDocument.save(RefreshMode.REFRESH);
                     logger.info("saved!");
-                } else {
+                }
+                //Se c'e` gia` la security_proxy nuova allora nun si fa nulla.
+                else {
                     logger.info("There's already security_proxy existing on this document, security_proxy id: "
                             + securityProxyIdValue + " security_proxy id to be placed: "
                             + fetchedDocument.getProperties().getIdValue(SECURITY_PROXY));
                 }
             } else {
-                logger.error("THERE'S NO SECUROTY_PROXY: " + fetchedDocument.getClassName() + netco_servco + " CREATED");
+                logger.error("THERE'S NO SECURITY_PROXY: " + fetchedDocument.getClassName() + netco_servco + " CREATED");
             }
         } catch (Exception e) {
             logger.error("SOMETHING WENT WRONG ON SAVING [security_proxy]: {" + securityProxyIdValue + "} " +
                     "TO DOCUMENT: {" + fetchedDocument.getClassName() + "} id: {" + fetchedDocument.getProperties().getIdValue("Id") + "} ", e);
-            throw new RuntimeException(e);
         }
     }
 
@@ -346,7 +391,7 @@ public class SecurityFixer {
     private Iterator<?> fetchSystemIdByBUALLChronicleIdRef(StringList buAllChronicleIdRef) {
         SearchScope searchScope = new SearchScope(instance.getObjectStore());
         if (buAllChronicleIdRef.size() == 1) {
-            String querySource = "SELECT * FROM anagrafica WHERE Id = " + buAllChronicleIdRef.get(0).toString();
+            String querySource = "SELECT * FROM acq_anagrafica_bu WHERE Id = " + buAllChronicleIdRef.get(0).toString();
             SearchSQL searchSQL = new SearchSQL();
             searchSQL.setQueryString(querySource);
             return searchScope.fetchRows(searchSQL, null, null, Boolean.TRUE).iterator();
@@ -370,7 +415,7 @@ public class SecurityFixer {
      * @return iterator
      */
     private Iterator<?> fetchHeadIdByRelationTailId(String tailId) {
-        String querySource = "SELECT [head_id] FROM [relation] WHERE [tail_id] = " + tailId;
+        String querySource = "SELECT [head_chronicle_id] FROM [acq_relation] WHERE [tail_chronicle_id] = " + tailId;
         SearchSQL searchSQL = new SearchSQL();
         searchSQL.setQueryString(querySource);
         return new SearchScope(instance.getObjectStore()).fetchRows(searchSQL, null, null, Boolean.TRUE).iterator();
@@ -383,7 +428,7 @@ public class SecurityFixer {
      * @return iterator
      */
     private Iterator<?> fetchSystemIdByBOBUChronicleIdRef(String boBuChronicleIdRef) {
-        String querySource = "SELECT [system_id] FROM [anagrafica] WHERE [id] = " + boBuChronicleIdRef;
+        String querySource = "SELECT [system_id] FROM [acq_anagrafica_bu] WHERE [id] = " + boBuChronicleIdRef;
         SearchSQL searchSQL = new SearchSQL();
         searchSQL.setQueryString(querySource);
         return new SearchScope(instance.getObjectStore()).fetchRows(searchSQL, null, null, Boolean.TRUE).iterator();
@@ -397,7 +442,7 @@ public class SecurityFixer {
      * @return iterator
      */
     private static Iterator<?> fetchSecurityProxies(String securityProxies, ObjectStore objectStoreSource) {
-        String querySource = "SELECT * FROM [security_proxy] WHERE [codice] = " + securityProxies;
+        String querySource = "SELECT * FROM [acq_security_proxy] WHERE [codice] = '" + securityProxies + "'";
         SearchSQL searchSQL = new SearchSQL();
         searchSQL.setQueryString(querySource);
         return new SearchScope(objectStoreSource).fetchRows(searchSQL, null, null, Boolean.TRUE).iterator();
@@ -406,10 +451,10 @@ public class SecurityFixer {
     /**
      * Restituisce la lista delle classi documentali, folder o custom object passandogli per query o senza tramite docClass.
      *
-     * @param docClass          una variabile configurabile su config.json, DEVE contenere almeno un dato.
+     * @param docClass          una variabile configurabile su config_coll.json, DEVE contenere almeno un dato.
      *                          I dati validi sono: Document, CustomObject o Folder.
      *                          Attualmente è gestito Document.
-     * @param query             una variabile della query indicata nel config.json, può essere anche vuota.
+     * @param query             una variabile della query indicata nel config_coll.json, può essere anche vuota.
      * @param objectStoreSource contiene i dati dell'object store
      * @return iterator
      */
