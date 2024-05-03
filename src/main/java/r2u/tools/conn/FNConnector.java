@@ -22,34 +22,33 @@ public class FNConnector {
     public void initWork() {
         SecurityFixer securityFixer = new SecurityFixer();
         ObjectStore objectStore = null;
-        int indexAttempt = 0;
+        int indexAttempt = 1, maxAttempts = 5;
         while (objectStore == null) {
-            for (; indexAttempt < 5; ++indexAttempt) {
-                logger.info("Trying to establish connection to: " + instance.getUriSource() + "; Attempt number: " + indexAttempt);
-                objectStore = objectStoreSetUp();
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    logger.error("SOMETHING WRONG WITH THREAD.SLEEP. Aborting!", e);
-                    System.exit(-1);
-                }
+            objectStore = objectStoreSetUp(indexAttempt);
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                logger.error("SOMETHING WRONG WITH THREAD.SLEEP. Aborting!", e);
+                System.exit(-1);
             }
-            if (indexAttempt == 5) {
+            if (indexAttempt == maxAttempts) {
                 break;
             }
+            indexAttempt++;
         }
         if (objectStore != null) {
             instance.setObjectStore(objectStore);
             securityFixer.startSecurityFix();
         } else {
-            logger.error("AFTER " + indexAttempt + " ATTEMPTS TO ESTABLISH THE CONNECTION TO: " + instance.getUriSource() + " PROGRAM IS GOING TO BE ABORTED!");
+            logger.error("AFTER " + indexAttempt + " ATTEMPTS TO ESTABLISH THE CONNECTION TO: " + instance.getUriSource() + " PROGRAM IS ABORTED!");
             System.exit(-1);
         }
     }
 
-    private ObjectStore objectStoreSetUp() {
+    private ObjectStore objectStoreSetUp(int indexAttempt) {
         Domain sourceDomain;
         Connection sourceConnection;
+        logger.info("Trying to establish connection to: " + instance.getUriSource() + "; Attempt number: " + indexAttempt);
         try {
             sourceConnection = Factory.Connection.getConnection(instance.getUriSource());
             Subject subject = UserContext.createSubject(Factory.Connection.getConnection(instance.getUriSource()),
