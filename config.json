@@ -4,18 +4,20 @@
   "sourceCPEUsername": "XXX",
   "sourceCPEPassword": "@$sW0rD",
   "jaasStanzaName": "FileNetP8WSI",
-  "dbHostname": "jdbc:oracle:thin:@xxx:000:XE",
-  "dbUsername": "XEObj",
-  "dbPassword": "@$$w0rdobj",
   "documentClass": "Document,CustomObject",
   "query": "",
-  "phase": "3",
   "objectClasses": [
     {
+      "docClassList": [
+        "document_class"
+      ],
       "Document": [
         "document_class=false"
       ],
-      "NetCoServCo": [
+      "NetCo": [
+        "system_id=_example_security"
+      ],
+      "ServCo": [
         "system_id=_example_security"
       ]
     }
