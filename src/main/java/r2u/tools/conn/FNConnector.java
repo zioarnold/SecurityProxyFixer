@@ -21,11 +21,12 @@ public class FNConnector {
 
     public void initWork() {
         SecurityFixer securityFixer = new SecurityFixer();
-        instance.setObjectStore(objectStoreSetUp());
-        if (instance.getObjectStore() == null) {
-            for (int i = 1; i < 5; i++) {
-                logger.info("Retrying to establish connection to: " + instance.getUriSource() + "; Attempt number: " + i);
-                objectStoreSetUp();
+        ObjectStore objectStore = null;
+        int indexAttempt = 0;
+        while (objectStore == null) {
+            for (; indexAttempt < 5; ++indexAttempt) {
+                logger.info("Trying to establish connection to: " + instance.getUriSource() + "; Attempt number: " + indexAttempt);
+                objectStore = objectStoreSetUp();
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException e) {
@@ -33,11 +34,15 @@ public class FNConnector {
                     System.exit(-1);
                 }
             }
+            if (indexAttempt == 5) {
+                break;
+            }
         }
-        if (instance.getObjectStore() != null) {
+        if (objectStore != null) {
+            instance.setObjectStore(objectStore);
             securityFixer.startSecurityFix();
         } else {
-            logger.error("UNABLE TO ESTABLISH CONNECTION TO: " + instance.getUriSource() + " ABORTING!!!");
+            logger.error("AFTER " + indexAttempt + " ATTEMPTS TO ESTABLISH THE CONNECTION TO: " + instance.getUriSource() + " PROGRAM IS GOING TO BE ABORTED!");
             System.exit(-1);
         }
     }
