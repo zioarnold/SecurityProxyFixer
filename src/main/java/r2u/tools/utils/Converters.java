@@ -2,6 +2,7 @@ package r2u.tools.utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Converters {
@@ -18,6 +19,7 @@ public class Converters {
         }
         return systemIds;
     }
+
     /**
      * Funzione atto a convertire un HashMap in una lista di stringhe, infatti elabora il campo globale
      * 'readOnlyDocuments' che contiene in se la mappatura delle classi documentali e le guid
@@ -32,4 +34,27 @@ public class Converters {
         return docClassIDs;
     }
 
+    public static HashMap<String, String> netCoConverter(ArrayList<String> netCo) {
+        HashMap<String, String> netCoMap = new HashMap<>();
+        for (String net : netCo) {
+            netCoMap.put(net.split("=")[0], net.split("=")[1]);
+        }
+        return netCoMap;
+    }
+
+    public static HashMap<String, Boolean> convertArrayList2HashMap(ArrayList<String> documentList) {
+        HashMap<String, Boolean> documentMap = new HashMap<>();
+        for (String document : documentList) {
+            documentMap.put(document.split("=")[0], Boolean.valueOf(document.split("=")[1]));
+        }
+        return documentMap;
+    }
+
+    public static ArrayList<String> objectClassDocumentConverter(List<Object> secProx) {
+        ArrayList<String> securityProxies = new ArrayList<>();
+        for (Object secProxy : secProx) {
+            securityProxies.add(secProxy.toString());
+        }
+        return securityProxies;
+    }
 }
