@@ -22,13 +22,29 @@ public class FNConnector {
     public void initWork() {
         SecurityFixer securityFixer = new SecurityFixer();
         instance.setObjectStore(objectStoreSetUp());
-        securityFixer.startSecurityFix();
+        if (instance.getObjectStore() == null) {
+            for (int i = 1; i < 5; i++) {
+                logger.info("Retrying to establish connection to: " + instance.getUriSource() + "; Attempt number: " + i);
+                objectStoreSetUp();
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    logger.error("SOMETHING WRONG WITH THREAD.SLEEP. Aborting!", e);
+                    System.exit(-1);
+                }
+            }
+        }
+        if (instance.getObjectStore() != null) {
+            securityFixer.startSecurityFix();
+        } else {
+            logger.error("UNABLE TO ESTABLISH CONNECTION TO: " + instance.getUriSource() + " ABORTING!!!");
+            System.exit(-1);
+        }
     }
 
     private ObjectStore objectStoreSetUp() {
         Domain sourceDomain;
         Connection sourceConnection;
-        ObjectStore objectStore = null;
         try {
             sourceConnection = Factory.Connection.getConnection(instance.getUriSource());
             Subject subject = UserContext.createSubject(Factory.Connection.getConnection(instance.getUriSource()),
@@ -36,13 +52,17 @@ public class FNConnector {
             UserContext.get().pushSubject(subject);
             sourceDomain = Factory.Domain.fetchInstance(sourceConnection, null, null);
             logger.info("FileNet sourceDomain name: " + sourceDomain.get_Name());
-            objectStore = Factory.ObjectStore.fetchInstance(sourceDomain, instance.getSourceCPEObjectStore(), null);
+            ObjectStore objectStore = Factory.ObjectStore.fetchInstance(sourceDomain, instance.getSourceCPEObjectStore(), null);
             logger.info("Object Store source: " + objectStore.get_DisplayName());
             logger.info("Connected to Source CPE successfully: " + sourceConnection.getURI() + " " + sourceConnection.getConnectionType());
+            return objectStore;
         } catch (EngineRuntimeException exception) {
-            logger.error("Unable to establish connection to: " + instance.getUriSource(), exception);
-            System.exit(-1);
+            if (exception.getExceptionCode().getErrorId().equals("FNRCA0031")) {
+                logger.error("CONNECTION TIMEOUT, PLEASE CHECK THE WSDL: " + instance.getUriSource(), exception);
+            } else {
+                logger.error("UNMANAGED ERROR IS CAUGHT: " + instance.getUriSource(), exception);
+            }
+            return null;
         }
-        return objectStore;
     }
 }
