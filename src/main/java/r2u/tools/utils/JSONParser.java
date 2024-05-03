@@ -46,6 +46,10 @@ public class JSONParser {
                 .getJSONObject(0)
                 .getJSONArray("ServCo").toList());
 
+        ArrayList<String> documentClassList = objectClassDocumentConverter(jsonObject.getJSONArray("objectClasses")
+                .getJSONObject(0)
+                .getJSONArray("docClassList").toList());
+
         if (sourceCPE.isEmpty()) {
             logger.error("SourceCPE is empty. Aborting!");
             System.exit(-1);
@@ -70,6 +74,7 @@ public class JSONParser {
             logger.error("documentClass is empty. Aborting!");
             System.exit(-1);
         }
+
         if (documentList.isEmpty()) {
             logger.error("document is empty. Aborting!");
             System.exit(-1);
@@ -82,6 +87,11 @@ public class JSONParser {
             logger.error("servCo is empty. Aborting!");
             System.exit(-1);
         }
+        if (documentClassList.isEmpty()) {
+            logger.error("documentClassList is empty. Aborting!");
+            System.exit(-1);
+        }
+
         Configurator instance = Configurator.getInstance();
         instance.setUriSource(sourceCPE);
         instance.setSourceCPEObjectStore(sourceCPEObjectStore);
@@ -92,6 +102,7 @@ public class JSONParser {
         instance.setNetCo(netCo);
         instance.setServCo(servCo);
         instance.setDocumentMap(documentMap);
+        instance.setDocumentClassList(documentClassList);
         instance.setQuery(query);
         FNConnector fnConnector = new FNConnector();
         fnConnector.initWork();

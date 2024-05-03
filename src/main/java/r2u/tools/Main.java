@@ -17,7 +17,7 @@ public class Main {
             System.exit(-1);
         }
         if (args.length > 1) {
-            logger.error("You have to pass only path to config_coll.json...");
+            logger.error("You have to pass only path to config.json...");
             System.exit(-1);
         }
         if (!Files.exists(Paths.get(args[0]))) {

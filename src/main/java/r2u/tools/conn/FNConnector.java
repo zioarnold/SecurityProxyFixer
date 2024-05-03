@@ -11,7 +11,6 @@ import r2u.tools.config.Configurator;
 import r2u.tools.worker.SecurityFixer;
 
 import javax.security.auth.Subject;
-import java.io.IOException;
 
 public class FNConnector {
     private final Configurator instance = Configurator.getInstance();
@@ -20,16 +19,16 @@ public class FNConnector {
     public FNConnector() {
     }
 
-    public void initWork() throws IOException {
+    public void initWork() {
         SecurityFixer securityFixer = new SecurityFixer();
-        instance.setObjectStore(getObjectStoreSource());
+        instance.setObjectStore(objectStoreSetUp());
         securityFixer.startSecurityFix();
     }
 
-    private ObjectStore getObjectStoreSource() {
+    private ObjectStore objectStoreSetUp() {
         Domain sourceDomain;
         Connection sourceConnection;
-        ObjectStore objectStoreSource = null;
+        ObjectStore objectStore = null;
         try {
             sourceConnection = Factory.Connection.getConnection(instance.getUriSource());
             Subject subject = UserContext.createSubject(Factory.Connection.getConnection(instance.getUriSource()),
@@ -37,13 +36,13 @@ public class FNConnector {
             UserContext.get().pushSubject(subject);
             sourceDomain = Factory.Domain.fetchInstance(sourceConnection, null, null);
             logger.info("FileNet sourceDomain name: " + sourceDomain.get_Name());
-            objectStoreSource = Factory.ObjectStore.fetchInstance(sourceDomain, instance.getSourceCPEObjectStore(), null);
-            logger.info("Object Store source: " + objectStoreSource.get_DisplayName());
-            logger.info("Connected to Source CPE successfully:" + sourceConnection.getURI() + " " + sourceConnection.getConnectionType());
+            objectStore = Factory.ObjectStore.fetchInstance(sourceDomain, instance.getSourceCPEObjectStore(), null);
+            logger.info("Object Store source: " + objectStore.get_DisplayName());
+            logger.info("Connected to Source CPE successfully: " + sourceConnection.getURI() + " " + sourceConnection.getConnectionType());
         } catch (EngineRuntimeException exception) {
             logger.error("Unable to establish connection to: " + instance.getUriSource(), exception);
             System.exit(-1);
         }
-        return objectStoreSource;
+        return objectStore;
     }
 }
