@@ -1,4 +1,4 @@
-# SdiPurchasingSecurityFixer ver1.3.1 by MrArni_ZIO - Released
+# SdiPurchasingSecurityFixer ver1.4 by MrArni_ZIO - Released
 ### Description
 Tool dedicato a SdiAcquisti, sviluppato per fixare le security proxy e le security di classi documentali in base ai criteri.
 Nel suo funzionamento il Tool non fa altro che:<br>
