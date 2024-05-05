@@ -407,26 +407,12 @@ public class SecurityFixer {
                     }
                 }
             }
-            //Caso in cui non trovo bo_bu_chronid_ref = 0 e bu_all_chronid_ref = 0
-            //Per ora stampo msg di warning.
-            if (buAllChronidRef.isEmpty()) {
-                buALLandBoBu_empty(fetchedDocument, buAllChronidRef, bo_bu_chronid_ref);
-            }
         }
-    }
 
-    /**
-     * Metodo atto a risolvere la problematica qualora buAllChronidRef e bo_bu_chronid_ref risultino vuoti.
-     * N.B. Attualmente non si fa nulla, perciò si stampa msg a video e scrittura su file log
-     *
-     * @param fetchedDocument   documento su quale si sta attualmente lavorando
-     * @param buAllChronidRef   una lista di system_id ossia bu_all_chronid_ref
-     * @param bo_bu_chronid_ref variabile che contiene system_id
-     */
-    private void buALLandBoBu_empty(Document fetchedDocument, ArrayList<Integer> buAllChronidRef,
-                                    int bo_bu_chronid_ref) {
-        try {
-            if (buAllChronidRef.isEmpty() && bo_bu_chronid_ref == 0) {
+        //Caso in cui non trovo bo_bu_chronid_ref = 0 e bu_all_chronid_ref = 0
+        //Per ora stampo msg di errore.
+        if (buAllChronidRef.isEmpty() && bo_bu_chronid_ref == 0) {
+            try {
                 BufferedWriter writer = new BufferedWriter(new FileWriter(fetchedDocument.getClassName() + "_generic.txt", true));
                 writer.write("UNABLE TO PROCESS: " + fetchedDocument.getClassName()
                         + " DUE TO [bo_bu_chronid_ref]: " + fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref")
@@ -435,9 +421,9 @@ public class SecurityFixer {
                         + " DUE TO [bo_bu_chronid_ref]: " + fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref")
                         + " AND [bu_all_chronid_ref]: " + buAllChronidRef + " ARE NULL or EMPTY ID DOC: " + fetchedDocument.getProperties().getIdValue("ID"));
                 writer.close();
+            } catch (IOException e) {
+                logger.error("UNABLE TO WRITE TO FILE: " + fetchedDocument.getClassName() + "_generic.txt", e);
             }
-        } catch (IOException e) {
-            logger.error("UNABLE TO WRITE TO FILE: " + fetchedDocument.getClassName() + "_generic.txt", e);
         }
     }
 
