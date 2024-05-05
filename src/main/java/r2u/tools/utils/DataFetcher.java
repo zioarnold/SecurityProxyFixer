@@ -109,4 +109,15 @@ public class DataFetcher {
         searchSQL.setQueryString(query);
         return new SearchScope(objectStore).fetchRows(searchSQL, null, null, Boolean.TRUE).iterator();
     }
+
+    /**
+     * @param docClass          classe documentale
+     * @param id                GUID di riferimento
+     * @param objectStoreSource object store configurato
+     * @return iterator
+     */
+    public static Iterator<?> reWorkFetchRows(String docClass, String id, ObjectStore objectStoreSource) {
+        String querySource = "SELECT * FROM [" + docClass + "] WHERE [Id] = " + id;
+        return fetchDataByQuery(querySource, objectStoreSource);
+    }
 }

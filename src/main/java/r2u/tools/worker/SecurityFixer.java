@@ -5,8 +5,6 @@ import com.filenet.api.core.*;
 import com.filenet.api.exception.EngineRuntimeException;
 import com.filenet.api.property.Properties;
 import com.filenet.api.query.RepositoryRow;
-import com.filenet.api.query.SearchSQL;
-import com.filenet.api.query.SearchScope;
 import com.filenet.api.util.Id;
 import com.filenet.api.util.UserContext;
 import org.apache.commons.lang.time.DurationFormatUtils;
@@ -271,7 +269,7 @@ public class SecurityFixer {
                 startTime = System.currentTimeMillis();
                 for (String docClassId : list) {
                     try {
-                        Iterator<?> iterator = reWorkFetchRows(docClassId.split(";")[0], docClassId.split(";")[1], instance.getObjectStore());
+                        Iterator<?> iterator = DataFetcher.reWorkFetchRows(docClassId.split(";")[0], docClassId.split(";")[1], instance.getObjectStore());
                         if (iterator != null && iterator.hasNext()) {
                             RepositoryRow repositoryRow = (RepositoryRow) iterator.next();
                             Properties properties = repositoryRow.getProperties();
@@ -323,20 +321,6 @@ public class SecurityFixer {
             }
             logger.error("UNABLE TO WRITE TO FILE:", e);
         }
-    }
-
-    /**
-     * @param docClass          classe documentale
-     * @param id                GUID di riferimento
-     * @param objectStoreSource object store configurato
-     * @return iterator
-     */
-    private static Iterator<?> reWorkFetchRows(String docClass, String id, ObjectStore objectStoreSource) {
-        String querySource = "SELECT * FROM [" + docClass + "] WHERE [Id] = " + id;
-        logger.info("Fetching data by query: " + querySource);
-        SearchSQL searchSQL = new SearchSQL();
-        searchSQL.setQueryString(querySource);
-        return new SearchScope(objectStoreSource).fetchRows(searchSQL, null, null, Boolean.TRUE).iterator();
     }
 
     /**
