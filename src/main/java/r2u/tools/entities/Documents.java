@@ -35,34 +35,34 @@ public class Documents {
      * @param fetchedDocument documento su quale si sta lavora.
      */
     public static void processDefaultDocumentClasses(Document fetchedDocument) {
+        int boBuChronidRef = 0;
+        ArrayList<Integer> buAllChronidRef = new ArrayList<>();
         //Recupero il system_id del documento in anagrafica
         //Nonostante che sia stringa, a db risulta numeric.
-        int bo_bu_chronid_ref = 0;
         if (fetchedDocument.getProperties().isPropertyPresent("bo_bu_chronid_ref") &&
                 fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref") != null) {
             Iterator<?> boBuChronidRefIterator = DataFetcher.fetchSystemIdByBOBUChronicleIdRef(fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref"), instance.getObjectStore());
             if (boBuChronidRefIterator != null && boBuChronidRefIterator.hasNext()) {
                 RepositoryRow repositoryRow = (RepositoryRow) boBuChronidRefIterator.next();
-                bo_bu_chronid_ref = repositoryRow.getProperties().getInteger32Value("system_id");
+                boBuChronidRef = repositoryRow.getProperties().getInteger32Value("system_id");
             }
             logger.info("Found document: " + fetchedDocument.getProperties().getIdValue("ID") + " of class: " + fetchedDocument.getClassName()
-                    + " with system_id={" + bo_bu_chronid_ref + "}");
+                    + " with system_id={" + boBuChronidRef + "}");
         } else {
             logger.error("FOUND DOCUMENT: " + fetchedDocument.getProperties().getIdValue("ID") + " OF CLASS: " + fetchedDocument.getClassName()
-                    + " WITH system_id={" + bo_bu_chronid_ref + "} LOOKING FOR bu_all_chronid_ref");
+                    + " WITH system_id={" + boBuChronidRef + "} LOOKING FOR bu_all_chronid_ref");
         }
         //Se bo_bu_chronid_ref è presente quindi maggior di zero.
-        if (bo_bu_chronid_ref > 0) {
+        if (boBuChronidRef > 0) {
             logger.info("Working document: " + fetchedDocument.getProperties().getIdValue("ID") + " of class: " + fetchedDocument.getClassName()
-                    + " with system_id={" + bo_bu_chronid_ref + "}");
+                    + " with system_id={" + boBuChronidRef + "}");
             // Verifico se nella mapping e` presente system_id trovato
-            Checker.checkBoBuAssignNetCoServCo(fetchedDocument, bo_bu_chronid_ref);
+            Checker.checkBoBuAssignNetCoServCo(fetchedDocument, boBuChronidRef);
         }
-        ArrayList<Integer> buAllChronidRef = new ArrayList<>();
-        if (bo_bu_chronid_ref == 0) {
+        if (boBuChronidRef == 0) {
             //Casistica in qui, system_id = 0 sul campo bo_bu_chronid_ref, si cerca di recuperare bu_all_chronid_ref
             if (fetchedDocument.getProperties().isPropertyPresent("bu_all_chronid_ref")
-                    && fetchedDocument.getProperties().getStringValue("bu_all_chronid_ref") != null) {
+                    && fetchedDocument.getProperties().getStringListValue("bu_all_chronid_ref") != null) {
                 Iterator<?> iterator = DataFetcher.fetchSystemIdByBUALLChronicleIdRef(fetchedDocument.getProperties().getStringListValue("bu_all_chronid_ref"), instance.getObjectStore());
                 while (iterator != null && iterator.hasNext()) {
                     RepositoryRow repositoryRow = (RepositoryRow) iterator.next();
@@ -110,15 +110,24 @@ public class Documents {
 
         //Caso in cui non trovo bo_bu_chronid_ref = 0 e bu_all_chronid_ref = 0
         //Per ora stampo msg di errore.
-        if (buAllChronidRef.isEmpty() && bo_bu_chronid_ref == 0) {
+        if (buAllChronidRef.isEmpty() && boBuChronidRef == 0) {
             try {
                 BufferedWriter writer = new BufferedWriter(new FileWriter(fetchedDocument.getClassName() + "_generic.txt", true));
-                writer.write("UNABLE TO PROCESS: " + fetchedDocument.getClassName()
-                        + " DUE TO [bo_bu_chronid_ref]: " + fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref")
-                        + " AND [bu_all_chronid_ref]: " + buAllChronidRef + " ARE NULL or EMPTY! ID DOC: " + fetchedDocument.getProperties().getIdValue("ID") + "\n");
-                logger.error("UNABLE TO PROCESS: " + fetchedDocument.getClassName()
-                        + " DUE TO [bo_bu_chronid_ref]: " + fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref")
-                        + " AND [bu_all_chronid_ref]: " + buAllChronidRef + " ARE NULL or EMPTY ID DOC: " + fetchedDocument.getProperties().getIdValue("ID"));
+                if (fetchedDocument.getProperties().isPropertyPresent("bo_bu_chronid_ref")) {
+                    writer.write("UNABLE TO PROCESS: " + fetchedDocument.getClassName()
+                            + " DUE TO [bo_bu_chronid_ref]: " + fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref")
+                            + " AND [bu_all_chronid_ref]: " + buAllChronidRef + " ARE NULL or EMPTY! ID DOC: " + fetchedDocument.getProperties().getIdValue("ID") + "\n");
+                    logger.error("UNABLE TO PROCESS: " + fetchedDocument.getClassName()
+                            + " DUE TO [bo_bu_chronid_ref]: " + fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref")
+                            + " AND [bu_all_chronid_ref]: " + buAllChronidRef + " ARE NULL or EMPTY ID DOC: " + fetchedDocument.getProperties().getIdValue("ID"));
+                } else {
+                    writer.write("UNABLE TO PROCESS: " + fetchedDocument.getClassName()
+                            + " DUE TO [bo_bu_chronid_ref]: " + boBuChronidRef
+                            + " AND [bu_all_chronid_ref]: " + buAllChronidRef + " ARE NULL or EMPTY! ID DOC: " + fetchedDocument.getProperties().getIdValue("ID") + "\n");
+                    logger.error("UNABLE TO PROCESS: " + fetchedDocument.getClassName()
+                            + " DUE TO [bo_bu_chronid_ref]: " + boBuChronidRef
+                            + " AND [bu_all_chronid_ref]: " + buAllChronidRef + " ARE NULL or EMPTY ID DOC: " + fetchedDocument.getProperties().getIdValue("ID"));
+                }
                 writer.close();
             } catch (IOException e) {
                 logger.error("UNABLE TO WRITE TO FILE: " + fetchedDocument.getClassName() + "_generic.txt", e);

@@ -21,19 +21,9 @@ public class Converters {
     }
 
     /**
-     * Funzione atto a convertire un HashMap in una lista di stringhe, infatti elabora il campo globale
-     * 'readOnlyDocuments' che contiene in se la mappatura delle classi documentali e le guid
-     *
-     * @return restituisce la lista delle classi documentali non processati per via di READ_ONLY delimitato da punto e virgola affiancato da GUID
+     * @param netCo la lista degli system_id appartenenti a NETCO
+     * @return hashMap che contiene il system_id come la chiave e l'affisso di quel system_id
      */
-    public static ArrayList<String> getStringsFromHashMap(HashMap<String, String> readOnlyDocuments) {
-        ArrayList<String> docClassIDs = new ArrayList<>();
-        for (Map.Entry<String, String> pair : readOnlyDocuments.entrySet()) {
-            docClassIDs.add(pair.getKey() + ";" + pair.getValue());
-        }
-        return docClassIDs;
-    }
-
     public static HashMap<String, String> netCoConverter(ArrayList<String> netCo) {
         HashMap<String, String> netCoMap = new HashMap<>();
         for (String net : netCo) {
@@ -42,7 +32,11 @@ public class Converters {
         return netCoMap;
     }
 
-    public static HashMap<String, Boolean> convertArrayList2HashMap(ArrayList<String> documentList) {
+    /**
+     * @param documentList un oggetto che contiene le classi documentali da processare
+     * @return hashMap che contiene, come la chiave la classe documentale, mentre il suo valore e` un boolean
+     */
+    public static HashMap<String, Boolean> convertArrayList2StringBooleanHashMap(ArrayList<String> documentList) {
         HashMap<String, Boolean> documentMap = new HashMap<>();
         for (String document : documentList) {
             documentMap.put(document.split("=")[0], Boolean.valueOf(document.split("=")[1]));
@@ -50,11 +44,16 @@ public class Converters {
         return documentMap;
     }
 
-    public static ArrayList<String> objectClassDocumentConverter(List<Object> secProx) {
-        ArrayList<String> securityProxies = new ArrayList<>();
-        for (Object secProxy : secProx) {
-            securityProxies.add(secProxy.toString());
+    /**
+     *
+     * @param objectList una lista di oggetti da convertire
+     * @return un'array di stringhe
+     */
+    public static ArrayList<String> listObject2ArrayListStringConverter(List<Object> objectList) {
+        ArrayList<String> arrayList = new ArrayList<>();
+        for (Object secProxy : objectList) {
+            arrayList.add(secProxy.toString());
         }
-        return securityProxies;
+        return arrayList;
     }
 }

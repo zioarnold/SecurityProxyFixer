@@ -21,8 +21,7 @@ public class SecurityProxySetup {
      * @param fetchedDocument documento attuale su cui si lavora
      * @param objectStore     variabile che contiene i dati sull'object store.
      */
-    public static void securityProxySetUp(String netco_servco, Document fetchedDocument, ObjectStore
-            objectStore) {
+    public static void securityProxySetUp(String netco_servco, Document fetchedDocument, ObjectStore objectStore) {
         //Vecchio ID del security proxy
         Id oldSecurityProxyId = fetchedDocument.getProperties().getIdValue(SECURITY_PROXY);
         Iterator<?> securityProxyName = DataFetcher.getSecurityProxyName(oldSecurityProxyId.toString(), objectStore);

@@ -36,12 +36,16 @@ public class Contracts {
      * @param fetchedDocument documento su quale si sta lavora.
      */
     public static void processContractDocumentClasses(Document fetchedDocument) {
+        int boBuChronidRef = 0;
+        ArrayList<Integer> buAllChronidRef = new ArrayList<>();
+        ArrayList<String> groupNameList = new ArrayList<>();
         //Gestione degli contratti. Per prima cosa si va a vedere il campo nome_gruppo della Bu Societa.
         //Se e` presente, allora non si fa nulla.
         //Se e` assente, allora procedimento standard con la assegnazione di NO_BU_servco/netco_security
         if (fetchedDocument.getProperties().isPropertyPresent("bo_bu_chronid_ref") &&
                 fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref") != null) {
-            logger.info("Found document: " + fetchedDocument.getProperties().getIdValue("ID") + " of class: " + fetchedDocument.getClassName());
+            logger.info("bo_bu_chronid_ref is present and is not null on document: " + fetchedDocument.getProperties().getIdValue("ID")
+                    + " of class: " + fetchedDocument.getClassName());
             Iterator<?> groupNameIterator = DataFetcher.fetchGroupNameByBOBUChronicleIdRef(fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref"),
                     instance.getObjectStore());
             //Se il campo e` popolato (nome_gruppo) allora nun si fa nulla
@@ -54,9 +58,31 @@ public class Contracts {
                 }
             }
         }
+        //Gestione dei casi in cui, per acq_all_contratto sono stati trovati dei documenti con security_proxy null
+        //Succede per mancanza di campo bo_bu_chronid_ref, quindi e` stato aggiunto il controllo
+        //sul campo bu_all_chronid_ref e quindi si controlla uno x uno...se tutti hanno il nome_gruppo popolato - non si fa niente
+        if (fetchedDocument.getProperties().isPropertyPresent("bu_all_chronid_ref") &&
+                fetchedDocument.getProperties().getStringListValue("bu_all_chronid_ref") != null) {
+            logger.info("bu_all_chronid_ref is present and is not null on document: " + fetchedDocument.getProperties().getIdValue("ID")
+                    + " of class: " + fetchedDocument.getClassName());
+            Iterator<?> iterator = DataFetcher.fetchSystemIdByBUALLChronicleIdRef(fetchedDocument.getProperties().getStringListValue("bu_all_chronid_ref"), instance.getObjectStore());
+            while (iterator != null && iterator.hasNext()) {
+                RepositoryRow repositoryRow = (RepositoryRow) iterator.next();
+                groupNameList.add(repositoryRow.getProperties().getStringValue("nome_gruppo"));
+            }
+            int nullCounter = 0;
+            for (String groupName : groupNameList) {
+                if (groupName == null || groupName.isEmpty()) {
+                    nullCounter++;
+                }
+            }
+            if (nullCounter == groupNameList.size()) {
+                logger.warn("NOME_GRUPPO field isn`t empty, the field value are: " + groupNameList + "! There's nothing to do!");
+                return;
+            }
+        }
         //Recupero il system_id del documento in anagrafica
         //Nonostante che sia stringa, a db risulta numeric.
-        int boBuChronidRef = 0;
         if (fetchedDocument.getProperties().isPropertyPresent("bo_bu_chronid_ref") &&
                 fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref") != null) {
             Iterator<?> boBuChronidRefIterator = DataFetcher.fetchSystemIdByBOBUChronicleIdRef(fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref"),
@@ -78,7 +104,6 @@ public class Contracts {
             // Verifico se nella mapping e` presente system_id trovato
             Checker.checkNoBuAssignNetCoServCo(fetchedDocument, boBuChronidRef);
         }
-        ArrayList<Integer> buAllChronidRef = new ArrayList<>();
         if (boBuChronidRef == 0) {
             //Casistica in qui, system_id = 0 sul campo bo_bu_chronid_ref, si cerca di recuperare bu_all_chronid_ref
             Iterator<?> iterator = DataFetcher.fetchSystemIdByBUALLChronicleIdRef(fetchedDocument.getProperties().getStringListValue("bu_all_chronid_ref"), instance.getObjectStore());

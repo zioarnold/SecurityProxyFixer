@@ -28,26 +28,37 @@ public class JSONParser {
                 sourceCPEPassword = jsonObject.getString("sourceCPEPassword"),
                 jaasStanzaName = jsonObject.getString("jaasStanzaName"),
                 documentClass = jsonObject.getString("documentClass"),
-                query = jsonObject.getString("query");
-        boolean isMassive = jsonObject.getBoolean("isMassive");
+                query = jsonObject.getString("query"),
+                isMassive = jsonObject.getString("isMassive");
+
         //Converto in arraylist di stringhe e poi in un hashmap rispettivamente String|String o String|Boolean
-        ArrayList<String> documentList = Converters.objectClassDocumentConverter(jsonObject.getJSONArray("objectClasses")
-                .getJSONObject(0)
-                .getJSONArray("Document").toList());
-        HashMap<String, Boolean> documentMap = Converters.convertArrayList2HashMap(documentList);
+        HashMap<String, Boolean> documentMap = Converters.convertArrayList2StringBooleanHashMap(
+                Converters.listObject2ArrayListStringConverter(
+                        jsonObject.getJSONArray("objectClasses")
+                                .getJSONObject(0)
+                                .getJSONArray("Document").toList()
+                )
+        );
 
-        ArrayList<String> netCoList = Converters.objectClassDocumentConverter(jsonObject.getJSONArray("objectClasses")
-                .getJSONObject(0)
-                .getJSONArray("NetCo").toList());
-        HashMap<String, String> netCo = Converters.netCoConverter(netCoList);
+        HashMap<String, String> netCo = Converters.netCoConverter(
+                Converters.listObject2ArrayListStringConverter(
+                        jsonObject.getJSONArray("objectClasses")
+                                .getJSONObject(0)
+                                .getJSONArray("NetCo").toList()
+                )
+        );
 
-        ArrayList<String> servCo = Converters.objectClassDocumentConverter(jsonObject.getJSONArray("objectClasses")
-                .getJSONObject(0)
-                .getJSONArray("ServCo").toList());
+        ArrayList<String> servCo = Converters.listObject2ArrayListStringConverter(
+                jsonObject.getJSONArray("objectClasses")
+                        .getJSONObject(0)
+                        .getJSONArray("ServCo").toList()
+        );
 
-        ArrayList<String> documentClassList = Converters.objectClassDocumentConverter(jsonObject.getJSONArray("objectClasses")
-                .getJSONObject(0)
-                .getJSONArray("docClassList").toList());
+        ArrayList<String> documentClassList = Converters.listObject2ArrayListStringConverter(
+                jsonObject.getJSONArray("objectClasses")
+                        .getJSONObject(0)
+                        .getJSONArray("docClassList").toList()
+        );
 
         if (sourceCPE.isEmpty()) {
             logger.error("SourceCPE is empty. Aborting!");
@@ -73,8 +84,7 @@ public class JSONParser {
             logger.error("documentClass is empty. Aborting!");
             System.exit(-1);
         }
-
-        if (documentList.isEmpty()) {
+        if (documentMap.isEmpty()) {
             logger.error("document is empty. Aborting!");
             System.exit(-1);
         }
@@ -90,7 +100,7 @@ public class JSONParser {
             logger.error("documentClassList is empty. Aborting!");
             System.exit(-1);
         }
-        if (String.valueOf(isMassive).equals("true")) {
+        if (isMassive.isEmpty()) {
             logger.error("isMassive is empty. Aborting!");
             System.exit(-1);
         }
@@ -107,7 +117,7 @@ public class JSONParser {
         instance.setDocumentMap(documentMap);
         instance.setDocumentClassList(documentClassList);
         instance.setQuery(query);
-        instance.setMassive(isMassive);
+        instance.setMassive(Boolean.parseBoolean(isMassive));
         FNConnector fnConnector = new FNConnector();
         fnConnector.initWork();
     }

@@ -12,14 +12,13 @@ import r2u.tools.constants.Constants;
 import r2u.tools.entities.Attachments;
 import r2u.tools.entities.Contracts;
 import r2u.tools.entities.Documents;
-import r2u.tools.utils.Converters;
 import r2u.tools.utils.DataFetcher;
 
+import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Objects;
 
@@ -29,7 +28,6 @@ public class SecurityFixer {
      */
     private final static Logger logger = Logger.getLogger(SecurityFixer.class.getName());
     private final Configurator instance = Configurator.getInstance();
-    private final HashMap<String, String> readOnlyDocuments = new HashMap<>();
 
     /**
      * Metodo che fa il lavoretto nel ricavare le classi documentali e se sono lavorabili su json, flag è true.
@@ -83,10 +81,8 @@ public class SecurityFixer {
                                 }
                             } else {
                                 logger.error("UNABLE TO FETCH DATA FROM : " + fetchedDocument + " fetchDataByQuery() RETURNED NULL! Aborting...");
-                                if (readOnlyDocuments.isEmpty()) {
-                                    if (UserContext.get() != null) {
-                                        UserContext.get().popSubject();
-                                    }
+                                if (UserContext.get() != null) {
+                                    UserContext.get().popSubject();
                                 }
                                 endTime = System.currentTimeMillis();
                                 logger.info("Security fixer terminated within: " + DurationFormatUtils.formatDuration(endTime - startTime, Constants.dateTimeFormat, true));
@@ -104,7 +100,6 @@ public class SecurityFixer {
                         }
                     } else {
                         for (String document : instance.getDocumentClassList()) {
-                            logger.info("Working with docClass " + document);
                             Iterator<?> iterator = DataFetcher.fetchRowsByClass(document, instance.getObjectStore());
                             if (iterator != null) {
                                 while (iterator.hasNext()) {
@@ -124,9 +119,11 @@ public class SecurityFixer {
                                     } catch (Exception exception) {
                                         logger.error("SOMETHING WENT WRONG... ", exception);
                                         try {
-                                            PrintWriter unManagedErrorsWriter = new PrintWriter(new FileWriter(Objects.requireNonNull(fetchedDocument).getClassName() + "_caught_errors.txt", true));
-                                            exception.printStackTrace(unManagedErrorsWriter);
-                                            unManagedErrorsWriter.close();
+                                            BufferedWriter readOnlySecurityProxyWriter = new BufferedWriter(new FileWriter(Objects.requireNonNull(fetchedDocument).getClassName()
+                                                    + "_caught_errors.txt", true));
+                                            readOnlySecurityProxyWriter.write("AN ERROR IS OCCURED WITH DOCUMENT_CLASS: " + fetchedDocument.getClassName() + " ID " + fetchedDocument.getProperties().getIdValue("ID").toString()
+                                                    + "\nERROR IS: " + exception.getLocalizedMessage() + "\nCAUSE IS: " + exception.getCause() + "\nSTACK TRACE: " + Arrays.toString(exception.getStackTrace()) + "\n");
+                                            readOnlySecurityProxyWriter.close();
                                         } catch (IOException e) {
                                             logger.error("UNABLE CREATE & WRITE TO FILE: " + Objects.requireNonNull(fetchedDocument).getClassName() + "_caught_errors.txt");
                                         }
@@ -149,12 +146,8 @@ public class SecurityFixer {
         }
         endTime = System.currentTimeMillis();
         logger.info("Security fixer terminated within: " + DurationFormatUtils.formatDuration(endTime - startTime, Constants.dateTimeFormat, true));
-        if (readOnlyDocuments.isEmpty()) {
-            if (UserContext.get() != null) {
-                UserContext.get().popSubject();
-            }
-        } else {
-            reWorkSecurityFix();
+        if (UserContext.get() != null) {
+            UserContext.get().popSubject();
         }
     }
 
@@ -170,6 +163,7 @@ public class SecurityFixer {
             case "acq_all_doc_contratto":
             case "acq_contratto":
             case "acq_pos_contratto": {
+                logger.info("Working with docClass " + fetchedDocument.getClassName());
                 Contracts.processContractDocumentClasses(fetchedDocument);
             }
             break;
@@ -178,51 +172,15 @@ public class SecurityFixer {
             case "acq_all_oda":
             case "acq_all_rda":
             case "acq_all_rdo": {
+                logger.info("Working with docClass " + fetchedDocument.getClassName());
                 Attachments.processAttachments(fetchedDocument);
             }
             break;
             default: {
+                logger.info("Working with docClass " + fetchedDocument.getClassName());
                 Documents.processDefaultDocumentClasses(fetchedDocument);
             }
             break;
-        }
-    }
-
-
-    /**
-     * Metodo atto a rifare il giro quando capita l'errore READ_ONLY
-     */
-    public void reWorkSecurityFix() {
-        ArrayList<String> list = Converters.getStringsFromHashMap(readOnlyDocuments);
-        Document document = null;
-        if (!list.isEmpty()) {
-            long startTime, endTime;
-            logger.info("Starting reWorkSecurityFix...");
-            startTime = System.currentTimeMillis();
-            for (String docClassId : list) {
-                try {
-                    Iterator<?> iterator = DataFetcher.reWorkFetchRows(docClassId.split(";")[0], docClassId.split(";")[1], instance.getObjectStore());
-                    if (iterator != null && iterator.hasNext()) {
-                        RepositoryRow repositoryRow = (RepositoryRow) iterator.next();
-                        Properties properties = repositoryRow.getProperties();
-                        document = Factory.Document.fetchInstance(instance.getObjectStore(), properties.getIdValue("ID").toString(), null);
-                        preProcessDocuments(document);
-                    }
-                } catch (Exception exception) {
-                    try {
-                        PrintWriter unManagedErrorsWriter = new PrintWriter(new FileWriter(Objects.requireNonNull(document).getClassName() + "_caught_errors.txt", true));
-                        exception.printStackTrace(unManagedErrorsWriter);
-                        unManagedErrorsWriter.close();
-                    } catch (IOException e) {
-                        logger.error("UNABLE CREATE & WRITE TO FILE: " + Objects.requireNonNull(document).getClassName() + "_caught_errors.txt");
-                    }
-                }
-            }
-            if (UserContext.get() != null) {
-                UserContext.get().popSubject();
-            }
-            endTime = System.currentTimeMillis();
-            logger.info("reWorkSecurityFix terminated within: " + DurationFormatUtils.formatDuration(endTime - startTime, Constants.dateTimeFormat, true));
         }
     }
 }
