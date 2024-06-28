@@ -29,7 +29,12 @@ public class JSONParser {
                 jaasStanzaName = jsonObject.getString("jaasStanzaName"),
                 documentClass = jsonObject.getString("documentClass"),
                 query = jsonObject.getString("query"),
-                isMassive = jsonObject.getString("isMassive");
+                isMassive = jsonObject.getString("isMassive"),
+                testConnection = jsonObject.getString("testConnection"),
+                reWorkOldIds = jsonObject.getString("reWorkOldIds"),
+                reWorkNulls = jsonObject.getString("reWorkNulls"),
+                count = jsonObject.getString("count"),
+                removeOldPermissions = jsonObject.getString("removeOldPermissions");
 
         //Converto in arraylist di stringhe e poi in un hashmap rispettivamente String|String o String|Boolean
         HashMap<String, Boolean> documentMap = Converters.convertArrayList2StringBooleanHashMap(
@@ -58,6 +63,10 @@ public class JSONParser {
                 jsonObject.getJSONArray("objectClasses")
                         .getJSONObject(0)
                         .getJSONArray("docClassList").toList()
+        );
+
+        ArrayList<String> ldapGroupToRemove = Converters.listObject2ArrayListStringConverter(
+                jsonObject.getJSONArray("LDAPGroupToRemove").toList()
         );
 
         if (sourceCPE.isEmpty()) {
@@ -104,7 +113,31 @@ public class JSONParser {
             logger.error("isMassive is empty. Aborting!");
             System.exit(-1);
         }
-
+        if (testConnection.isEmpty()) {
+            logger.error("testConnection is empty. Aborting!");
+            System.exit(-1);
+        }
+        if (reWorkOldIds.isEmpty()) {
+            logger.error("reWorkOldIds is empty. Aborting!");
+            System.exit(-1);
+        }
+        if (reWorkNulls.isEmpty()) {
+            logger.error("reWorkNulls is empty. Aborting!");
+            System.exit(-1);
+        }
+        if (count.isEmpty()) {
+            logger.error("count is empty. Aborting!");
+            System.exit(-1);
+        }
+        if (removeOldPermissions.isEmpty()) {
+            logger.error("removeOldPermissions is empty. Aborting!");
+            System.exit(-1);
+        }
+        if (ldapGroupToRemove.isEmpty()){
+            logger.error("ldapGroupToRemove is empty. Aborting!");
+            System.exit(-1);
+        }
+        //Imposto i dati nel configuratore
         Configurator instance = Configurator.getInstance();
         instance.setUriSource(sourceCPE);
         instance.setSourceCPEObjectStore(sourceCPEObjectStore);
@@ -118,6 +151,12 @@ public class JSONParser {
         instance.setDocumentClassList(documentClassList);
         instance.setQuery(query);
         instance.setMassive(Boolean.parseBoolean(isMassive));
+        instance.setTestConnection(testConnection);
+        instance.setReWorkOldIds(Boolean.parseBoolean(reWorkOldIds));
+        instance.setReWorkNulls(Boolean.parseBoolean(reWorkNulls));
+        instance.setCount(Boolean.parseBoolean(count));
+        instance.setRemoveOldPermissions(Boolean.parseBoolean(removeOldPermissions));
+        instance.setLdapGroupToRemove(ldapGroupToRemove);
         FNConnector fnConnector = new FNConnector();
         fnConnector.initWork();
     }

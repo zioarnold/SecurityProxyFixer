@@ -35,67 +35,65 @@ public class Documents {
      * @param fetchedDocument documento su quale si sta lavora.
      */
     public static void processDefaultDocumentClasses(Document fetchedDocument) {
-        int boBuChronidRef = 0;
-        ArrayList<Integer> buAllChronidRef = new ArrayList<>();
+        int buSystemId = 0; //Un system id cioè bo_bu_chronid_ref
+        ArrayList<Integer> buSystemIds = new ArrayList<>(); //Le system ID cioè bu_all_chronid_ref
         //Recupero il system_id del documento in anagrafica
         //Nonostante che sia stringa, a db risulta numeric.
-        if (fetchedDocument.getProperties().isPropertyPresent("bo_bu_chronid_ref") &&
-                fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref") != null) {
+        if (fetchedDocument.getProperties().isPropertyPresent("bo_bu_chronid_ref")) {
             Iterator<?> boBuChronidRefIterator = DataFetcher.fetchSystemIdByBOBUChronicleIdRef(fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref"), instance.getObjectStore());
             if (boBuChronidRefIterator != null && boBuChronidRefIterator.hasNext()) {
                 RepositoryRow repositoryRow = (RepositoryRow) boBuChronidRefIterator.next();
-                boBuChronidRef = repositoryRow.getProperties().getInteger32Value("system_id");
+                buSystemId = repositoryRow.getProperties().getInteger32Value("system_id");
             }
             logger.info("Found document: " + fetchedDocument.getProperties().getIdValue("ID") + " of class: " + fetchedDocument.getClassName()
-                    + " with system_id={" + boBuChronidRef + "}");
+                    + " with buSystemId={" + buSystemId + "}");
         } else {
             logger.error("FOUND DOCUMENT: " + fetchedDocument.getProperties().getIdValue("ID") + " OF CLASS: " + fetchedDocument.getClassName()
-                    + " WITH system_id={" + boBuChronidRef + "} LOOKING FOR bu_all_chronid_ref");
+                    + " WITH buSystemId={" + buSystemId + "} LOOKING FOR bu_all_chronid_ref");
         }
         //Se bo_bu_chronid_ref è presente quindi maggior di zero.
-        if (boBuChronidRef > 0) {
+        if (buSystemId > 0) {
             logger.info("Working document: " + fetchedDocument.getProperties().getIdValue("ID") + " of class: " + fetchedDocument.getClassName()
-                    + " with system_id={" + boBuChronidRef + "}");
+                    + " with buSystemId={" + buSystemId + "}");
             // Verifico se nella mapping e` presente system_id trovato
-            Checker.checkBoBuAssignNetCoServCo(fetchedDocument, boBuChronidRef);
+            Checker.checkBoBuAssignNetCoServCo(fetchedDocument, buSystemId);
         }
-        if (boBuChronidRef == 0) {
+        if (buSystemId == 0) {
             //Casistica in qui, system_id = 0 sul campo bo_bu_chronid_ref, si cerca di recuperare bu_all_chronid_ref
-            if (fetchedDocument.getProperties().isPropertyPresent("bu_all_chronid_ref")
-                    && fetchedDocument.getProperties().getStringListValue("bu_all_chronid_ref") != null) {
+            if (fetchedDocument.getProperties().isPropertyPresent("bu_all_chronid_ref")) {
                 Iterator<?> iterator = DataFetcher.fetchSystemIdByBUALLChronicleIdRef(fetchedDocument.getProperties().getStringListValue("bu_all_chronid_ref"), instance.getObjectStore());
                 while (iterator != null && iterator.hasNext()) {
                     RepositoryRow repositoryRow = (RepositoryRow) iterator.next();
-                    buAllChronidRef.add(repositoryRow.getProperties().getInteger32Value("system_id"));
+                    buSystemIds.add(repositoryRow.getProperties().getInteger32Value("system_id"));
                 }
                 logger.info("Working document: " + fetchedDocument.getProperties().getIdValue("ID") + " of class: " + fetchedDocument.getClassName()
-                        + " with system_id={" + buAllChronidRef + "}");
+                        + " with buSystemIds=" + buSystemIds);
                 ArrayList<Integer> systemIds = Converters.getIntegerFromHashMap(instance.getNetCo());
                 // Se ho soltanto uno trovato - allora procedimento simile a quanto sopra
-                if (buAllChronidRef.size() == 1) {
+                if (buSystemIds.size() == 1) {
                     //Tanto prendo il bu_all_chronid_ref di elemento trovato
-                    Checker.checkBoBuAssignNetCoServCo(fetchedDocument, buAllChronidRef.get(0));
+                    Checker.checkBoBuAssignNetCoServCo(fetchedDocument, buSystemIds.get(0));
                 }
                 //Se ho più di un risultato, allora
-                if (buAllChronidRef.size() > 1) {
+                if (buSystemIds.size() > 1) {
                     String netco_servco;
                     //Verifico se le SYSTEM_ID (bu_all_chronid_ref) recuperate sono IDENTICI a SYSTEM_ID mappate in config.json sotto NetCoServCo,
                     //Allora gli assegno NETCO_SECURITY. Esempio ho un documento con due soltanto system_id e tutte e due sono NETCO.
-                    if (systemIds.equals(buAllChronidRef)) {
-                        netco_servco = instance.getNetCo().get(String.valueOf(buAllChronidRef.get(0)));
+                    if (systemIds.equals(buSystemIds)) {
+                        netco_servco = instance.getNetCo().get(String.valueOf(buSystemIds.get(0)));
                         Assigner.assignNetCoSecurityProxy(netco_servco, fetchedDocument);
                     } else {
                         //Altrimenti uno x uno vedo le SYSTEM_ID.
                         int notFound = 0;
-                        for (int i : buAllChronidRef) {
+                        for (int i : buSystemIds) {
                             if (!instance.getNetCo().containsKey(String.valueOf(i))) {
                                 //Incremento il contatore di bu_all_chronid_ref non trovati
                                 notFound++;
                             }
                         }
                         //Se il contatore e` uguale alla dimensione di bu_all_chronid_ref recuperati prima - allora servco.
-                        if (notFound == buAllChronidRef.size()) {
-                            logger.info("BuAllChronidRef size == " + buAllChronidRef.size() + " and notFound == " + notFound);
+                        if (notFound == buSystemIds.size()) {
+                            logger.info("BuAllChronidRef size == " + buSystemIds.size() + " and notFound == " + notFound);
                             netco_servco = instance.getServCo().get(0);
                             Assigner.assignServCoSecurityProxy(netco_servco, fetchedDocument);
                         }
@@ -110,28 +108,27 @@ public class Documents {
 
         //Caso in cui non trovo bo_bu_chronid_ref = 0 e bu_all_chronid_ref = 0
         //Per ora stampo msg di errore.
-        if (buAllChronidRef.isEmpty() && boBuChronidRef == 0) {
-            try {
-                BufferedWriter writer = new BufferedWriter(new FileWriter(fetchedDocument.getClassName() + "_generic.txt", true));
-                if (fetchedDocument.getProperties().isPropertyPresent("bo_bu_chronid_ref")) {
-                    writer.write("UNABLE TO PROCESS: " + fetchedDocument.getClassName()
-                            + " DUE TO [bo_bu_chronid_ref]: " + fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref")
-                            + " AND [bu_all_chronid_ref]: " + buAllChronidRef + " ARE NULL or EMPTY! ID DOC: " + fetchedDocument.getProperties().getIdValue("ID") + "\n");
-                    logger.error("UNABLE TO PROCESS: " + fetchedDocument.getClassName()
-                            + " DUE TO [bo_bu_chronid_ref]: " + fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref")
-                            + " AND [bu_all_chronid_ref]: " + buAllChronidRef + " ARE NULL or EMPTY ID DOC: " + fetchedDocument.getProperties().getIdValue("ID"));
-                } else {
-                    writer.write("UNABLE TO PROCESS: " + fetchedDocument.getClassName()
-                            + " DUE TO [bo_bu_chronid_ref]: " + boBuChronidRef
-                            + " AND [bu_all_chronid_ref]: " + buAllChronidRef + " ARE NULL or EMPTY! ID DOC: " + fetchedDocument.getProperties().getIdValue("ID") + "\n");
-                    logger.error("UNABLE TO PROCESS: " + fetchedDocument.getClassName()
-                            + " DUE TO [bo_bu_chronid_ref]: " + boBuChronidRef
-                            + " AND [bu_all_chronid_ref]: " + buAllChronidRef + " ARE NULL or EMPTY ID DOC: " + fetchedDocument.getProperties().getIdValue("ID"));
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(fetchedDocument.getClassName() + "_generic.txt", true));
+            if (fetchedDocument.getProperties().isPropertyPresent("bo_bu_chronid_ref")) {
+                if (fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref") != null && buSystemId == 0 && buSystemIds.isEmpty()) {
+                    writer.write("UNABLE TO PROCESS: " + fetchedDocument.getClassName() + "/" + fetchedDocument.getProperties().getIdValue("ID") + " DUE TO: DOCUMENT HAS THE NON EXISTANT REFERENCE TO BU_SOCIETA'\n" +
+                            "IN FACT: " + fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref") + " DOES NOT EXIST ON BU_SOCIETA'\n");
+                    logger.error("UNABLE TO PROCESS: " + fetchedDocument.getClassName() + " DUE TO: DOCUMENT HAS THE NON EXISTANT REFERENCE TO BU_SOCIETA' " +
+                            "IN FACT: " + fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref") + " DOES NOT EXIST ON BU_SOCIETA'");
                 }
-                writer.close();
-            } catch (IOException e) {
-                logger.error("UNABLE TO WRITE TO FILE: " + fetchedDocument.getClassName() + "_generic.txt", e);
+                if (fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref") == null && buSystemId == 0 && buSystemIds.isEmpty()) {
+                    writer.write("UNABLE TO PROCESS: " + fetchedDocument.getClassName() + "/" + fetchedDocument.getProperties().getIdValue("ID")
+                            + " DUE TO [bo_bu_chronid_ref]: " + fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref")
+                            + " AND [bu_all_chronid_ref]: " + buSystemIds + " ARE NULL or EMPTY! ID DOC: " + fetchedDocument.getProperties().getIdValue("ID") + "\n");
+                    logger.error("UNABLE TO PROCESS: " + fetchedDocument.getClassName()
+                            + " DUE TO [bo_bu_chronid_ref]: " + fetchedDocument.getProperties().getStringValue("bo_bu_chronid_ref")
+                            + " AND [bu_all_chronid_ref]: " + buSystemIds + " ARE NULL or EMPTY ID DOC: " + fetchedDocument.getProperties().getIdValue("ID"));
+                }
             }
+            writer.close();
+        } catch (IOException e) {
+            logger.error("UNABLE TO WRITE TO FILE: " + fetchedDocument.getClassName() + "_generic.txt", e);
         }
     }
 }

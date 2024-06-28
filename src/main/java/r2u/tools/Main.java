@@ -13,7 +13,7 @@ public class Main {
 
     public static void main(String[] args) throws IOException, URISyntaxException {
         if (args.length == 0) {
-            logger.error("No config_coll.json passed to the argument...");
+            logger.error("No config.json passed to the argument...");
             System.exit(-1);
         }
         if (args.length > 1) {
@@ -21,7 +21,7 @@ public class Main {
             System.exit(-1);
         }
         if (!Files.exists(Paths.get(args[0]))) {
-            logger.error("No config_coll.json has been found");
+            logger.error("No config.json has been found");
             System.exit(-1);
         }
         JSONParser jsonParser = new JSONParser();

@@ -25,7 +25,7 @@ public class Attachments {
      * Dal documento padre si estraggono le bo_bu_chronid_ref o bu_all_chronid_ref
      *
      * @param fetchedDocument una allegato da processare
-     * {@link #saveSecurityProxyToChildDocument(Document, Document) saveSecurityProxyToChildDocument}
+     *                        {@link #saveSecurityProxyToChildDocument(Document, Document) saveSecurityProxyToChildDocument}
      */
     public static void processAttachments(Document fetchedDocument) {
         try {
@@ -46,7 +46,7 @@ public class Attachments {
                 Document parentDocumentId = Factory.Document.fetchInstance(instance.getObjectStore(), headByRelationByTailId, null);
                 saveSecurityProxyToChildDocument(parentDocumentId, fetchedDocument);
             } else {
-                logger.warn("There's no parent found for : " + fetchedDocument.getClassName() + " document id: " + fetchedDocument.getProperties().getIdValue("ID"));
+                logger.warn("THERE'S NO PARENT FOUND FOR : " + fetchedDocument.getClassName() + " DOCUMENT ID: " + fetchedDocument.getProperties().getIdValue("ID"));
                 BufferedWriter documentWithoutParent = new BufferedWriter(new FileWriter(fetchedDocument.getClassName() + "_no_parent.txt", true));
                 documentWithoutParent.write(fetchedDocument.getClassName() + ";" + fetchedDocument.getProperties().getIdValue("ID") + "\n");
                 documentWithoutParent.close();
@@ -66,28 +66,27 @@ public class Attachments {
                                                          Document childDocument) {
         logger.info("Working with parentDocument/id: " + parentDocumentId.getClassName() + "/" + parentDocumentId.getProperties().getIdValue("ID")
                 + " of childDocument/id: " + childDocument.getClassName() + "/" + childDocument.getProperties().getIdValue("ID"));
-        int boBuChronidRef = 0;
-        ArrayList<Integer> buAllChronidRef = new ArrayList<>();
+        int buSystemId = 0;
+        ArrayList<Integer> buSystemIds = new ArrayList<>();
         //Recupero il system_id del documento in anagrafica
         //Nonostante che sia stringa, a db risulta numeric.
-        if (parentDocumentId.getProperties().isPropertyPresent("bo_bu_chronid_ref") &&
-                parentDocumentId.getProperties().getStringValue("bo_bu_chronid_ref") != null) {
+        if (parentDocumentId.getProperties().isPropertyPresent("bo_bu_chronid_ref")) {
             Iterator<?> boBuChronidRefIterator = DataFetcher.fetchSystemIdByBOBUChronicleIdRef(parentDocumentId.getProperties().getStringValue("bo_bu_chronid_ref"),
                     instance.getObjectStore());
             if (boBuChronidRefIterator != null && boBuChronidRefIterator.hasNext()) {
                 RepositoryRow repositoryRow = (RepositoryRow) boBuChronidRefIterator.next();
-                boBuChronidRef = repositoryRow.getProperties().getInteger32Value("system_id");
+                buSystemId = repositoryRow.getProperties().getInteger32Value("system_id");
             }
-            logger.info("Parent document system_id={" + boBuChronidRef + "}");
+            logger.info("Parent document buSystemId = " + buSystemId);
         } else {
-            logger.error("PARENT DOCUMENT system_id={" + boBuChronidRef + "} LOOKING FOR bu_all_chronid_ref");
+            logger.error("PARENT DOCUMENT buSystemId = " + buSystemId + ", LOOKING FOR bu_all_chronid_ref");
         }
         //Se bo_bu_chronid_ref è presente quindi maggior di zero.
-        if (boBuChronidRef > 0) {
+        if (buSystemId > 0) {
             // Verifico se nella mapping e` presente system_id trovato
-            Checker.checkBoBuAssignNetCoServCo(childDocument, boBuChronidRef);
+            Checker.checkBoBuAssignNetCoServCo(childDocument, buSystemId);
         }
-        if (boBuChronidRef == 0) {
+        if (buSystemId == 0) {
             //Controllo se campo e` presente.
             if (parentDocumentId.getProperties().isPropertyPresent("bu_all_chronid_ref")
                     && parentDocumentId.getProperties().getStringListValue("bu_all_chronid_ref") != null) {
@@ -96,34 +95,34 @@ public class Attachments {
                         instance.getObjectStore());
                 while (iterator != null && iterator.hasNext()) {
                     RepositoryRow repositoryRow = (RepositoryRow) iterator.next();
-                    buAllChronidRef.add(repositoryRow.getProperties().getInteger32Value("system_id"));
+                    buSystemIds.add(repositoryRow.getProperties().getInteger32Value("system_id"));
                 }
                 ArrayList<Integer> systemIds = Converters.getIntegerFromHashMap(instance.getNetCo());
                 // Se ho soltanto uno trovato - allora procedimento simile a quanto sopra
-                if (buAllChronidRef.size() == 1) {
+                if (buSystemIds.size() == 1) {
                     //Tanto prendo il bu_all_chronid_ref di elemento trovato
-                    Checker.checkBoBuAssignNetCoServCo(childDocument, buAllChronidRef.get(0));
+                    Checker.checkBoBuAssignNetCoServCo(childDocument, buSystemIds.get(0));
                     //Se ho più di un risultato, allora
                 }
-                if (buAllChronidRef.size() > 1) {
+                if (buSystemIds.size() > 1) {
                     String netco_servco;
                     //Verifico se le SYSTEM_ID (bu_all_chronid_ref) recuperate sono IDENTICI a SYSTEM_ID mappate in config.json sotto NetCoServCo,
                     //Allora gli assegno NETCO_SECURITY. Esempio ho un documento con due soltanto system_id e tutte e due sono NETCO.
-                    if (systemIds.equals(buAllChronidRef)) {
-                        netco_servco = instance.getNetCo().get(String.valueOf(buAllChronidRef.get(0)));
+                    if (systemIds.equals(buSystemIds)) {
+                        netco_servco = instance.getNetCo().get(String.valueOf(buSystemIds.get(0)));
                         Assigner.assignNetCoSecurityProxy(netco_servco, childDocument);
                     } else {
                         //Altrimenti uno x uno vedo le SYSTEM_ID.
                         int notFound = 0;
-                        for (int i : buAllChronidRef) {
+                        for (int i : buSystemIds) {
                             if (!instance.getNetCo().containsKey(String.valueOf(i))) {
                                 //Incremento il contatore di bu_all_chronid_ref non trovati
                                 notFound++;
                             }
                         }
                         //Se il contatore e` uguale alla dimensione di bu_all_chronid_ref recuperati prima - allora servco.
-                        if (notFound == buAllChronidRef.size()) {
-                            logger.info("BuAllChronidRef size == " + buAllChronidRef.size() + " and notFound == " + notFound);
+                        if (notFound == buSystemIds.size()) {
+                            logger.info("buSystemIds size == " + buSystemIds.size() + " and notFound == " + notFound);
                             netco_servco = instance.getServCo().get(0);
                             Assigner.assignServCoSecurityProxy(netco_servco, childDocument);
                         }
@@ -142,28 +141,35 @@ public class Attachments {
 
         //Caso in cui non trovo bo_bu_chronid_ref = 0 e bu_all_chronid_ref = 0
         //Per ora stampo msg di errore.
-        if (buAllChronidRef.isEmpty() && boBuChronidRef == 0) {
-            try {
-                BufferedWriter writer = new BufferedWriter(new FileWriter(parentDocumentId.getClassName() + "_generic.txt", true));
-                if (parentDocumentId.getProperties().isPropertyPresent("bo_bu_chronid_ref")) {
-                    writer.write("UNABLE TO PROCESS: " + parentDocumentId.getClassName()
-                            + " DUE TO [bo_bu_chronid_ref]: " + parentDocumentId.getProperties().getStringValue("bo_bu_chronid_ref")
-                            + " AND [bu_all_chronid_ref]: " + buAllChronidRef + " ARE NULL or EMPTY! PARENT ID DOC: " + parentDocumentId.getProperties().getIdValue("ID") + "\n");
-                    logger.error("UNABLE TO PROCESS: " + parentDocumentId.getClassName()
-                            + " DUE TO [bo_bu_chronid_ref]: " + parentDocumentId.getProperties().getStringValue("bo_bu_chronid_ref")
-                            + " AND [bu_all_chronid_ref]: " + buAllChronidRef + " ARE NULL or EMPTY! PARENT ID DOC: " + parentDocumentId.getProperties().getIdValue("ID"));
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(parentDocumentId.getClassName() + "_generic.txt", true));
+            if (parentDocumentId.getProperties().isPropertyPresent("bo_bu_chronid_ref")) {
+                if (parentDocumentId.getProperties().getStringValue("bo_bu_chronid_ref") != null && buSystemId == 0 && buSystemIds.isEmpty()) {
+                    writer.write("UNABLE TO PROCESS CHILD DOCUMENT: " + childDocument.getClassName()
+                            + " DUE TO PARENTS DOCUMENT PROPERTY [bo_bu_chronid_ref]: " + parentDocumentId.getProperties().getStringValue("bo_bu_chronid_ref")
+                            + " AND [bu_all_chronid_ref]: " + buSystemIds + " ARE NULL or EMPTY! PARENT ID DOC: " + parentDocumentId.getProperties().getIdValue("ID") + "\n");
+                    logger.error("UNABLE TO PROCESS CHILD DOCUMENT: " + childDocument.getClassName()
+                            + " DUE TO PARENTS DOCUMENT PROPERTY [bo_bu_chronid_ref]: " + parentDocumentId.getProperties().getStringValue("bo_bu_chronid_ref")
+                            + " AND [bu_all_chronid_ref]: " + buSystemIds + " ARE NULL or EMPTY! PARENT ID DOC: " + parentDocumentId.getProperties().getIdValue("ID"));
+                } else if (parentDocumentId.getProperties().getStringValue("bo_bu_chronid_ref") == null && buSystemId == 0 && buSystemIds.isEmpty()) {
+                    writer.write("UNABLE TO PROCESS CHILD DOCUMENT: " + childDocument.getClassName()
+                            + " DUE TO PARENTS DOCUMENT PROPERTY [bo_bu_chronid_ref]: " + buSystemId
+                            + " AND [bu_all_chronid_ref]: " + buSystemIds + " ARE NULL or EMPTY! PARENT ID DOC: " + parentDocumentId.getProperties().getIdValue("ID") + "\n");
+                    logger.error("UNABLE TO PROCESS CHILD DOCUMENT: " + childDocument.getClassName()
+                            + " DUE TO PARENTS DOCUMENT PROPERTY [bo_bu_chronid_ref]: " + buSystemId
+                            + " AND [bu_all_chronid_ref]: " + buSystemIds + " ARE NULL or EMPTY! PARENT ID DOC: " + parentDocumentId.getProperties().getIdValue("ID"));
                 } else {
-                    writer.write("UNABLE TO PROCESS: " + parentDocumentId.getClassName()
-                            + " DUE TO [bo_bu_chronid_ref]: " + boBuChronidRef
-                            + " AND [bu_all_chronid_ref]: " + buAllChronidRef + " ARE NULL or EMPTY! PARENT ID DOC: " + parentDocumentId.getProperties().getIdValue("ID") + "\n");
-                    logger.error("UNABLE TO PROCESS: " + parentDocumentId.getClassName()
-                            + " DUE TO [bo_bu_chronid_ref]: " + boBuChronidRef
-                            + " AND [bu_all_chronid_ref]: " + buAllChronidRef + " ARE NULL or EMPTY! PARENT ID DOC: " + parentDocumentId.getProperties().getIdValue("ID"));
+                    writer.write("UNABLE TO PROCESS CHILD DOCUMENT: " + childDocument.getClassName()
+                            + " DUE TO PARENTS DOCUMENT PROPERTY [bo_bu_chronid_ref]: " + buSystemId
+                            + " AND [bu_all_chronid_ref]: " + buSystemIds + " ARE NULL or EMPTY! PARENT ID DOC: " + parentDocumentId.getProperties().getIdValue("ID") + "\n");
+                    logger.error("UNABLE TO PROCESS CHILD DOCUMENT: " + childDocument.getClassName()
+                            + " DUE TO PARENTS DOCUMENT PROPERTY [bo_bu_chronid_ref]: " + buSystemId
+                            + " AND [bu_all_chronid_ref]: " + buSystemIds + " ARE NULL or EMPTY! PARENT ID DOC: " + parentDocumentId.getProperties().getIdValue("ID"));
                 }
-                writer.close();
-            } catch (IOException e) {
-                logger.error("UNABLE TO WRITE TO FILE: " + childDocument.getClassName() + "_generic.txt", e);
             }
+            writer.close();
+        } catch (IOException e) {
+            logger.error("UNABLE TO WRITE TO FILE: " + childDocument.getClassName() + "_generic.txt", e);
         }
     }
 }

@@ -17,18 +17,32 @@ public class SecurityProxySetup {
     /**
      * Metodo che imposta security_proxy in base alla variabile passatogli netco_servco
      *
-     * @param netco_servco    variabile contenente {@code "_netco_security"} oppure {@code "_servco_security"}
+     * @param netco_servco    variabile contenente  "_netco_security" oppure "_servco_security"
      * @param fetchedDocument documento attuale su cui si lavora
      * @param objectStore     variabile che contiene i dati sull'object store.
      */
     public static void securityProxySetUp(String netco_servco, Document fetchedDocument, ObjectStore objectStore) {
         //Vecchio ID del security proxy
-        Id oldSecurityProxyId = fetchedDocument.getProperties().getIdValue(SECURITY_PROXY);
-        Iterator<?> securityProxyName = DataFetcher.getSecurityProxyName(oldSecurityProxyId.toString(), objectStore);
+        Id oldSecurityProxyId;
+        //verifico se il campo non e` vuoto per assegnarlo
+        //TODO: Da capire come gestire - se e` da gestire
+        if (fetchedDocument.getProperties().getIdValue(SECURITY_PROXY) == null) {
+            //e` vuoto quindi nulla da fare.
+            logger.error("THERE'S NO SECURITY PROXY SET UP ON DOCUMENT: " + fetchedDocument.getClassName()
+                    + "/" + fetchedDocument.getProperties().getIdValue("ID")
+                    + " SECURITY_PROXY VALUE IS: " + fetchedDocument.getProperties().getIdValue(SECURITY_PROXY));
+            return;
+        } else {
+            oldSecurityProxyId = fetchedDocument.getProperties().getIdValue(SECURITY_PROXY);
+        }
+        Iterator<?> securityProxyName = null;
+        if (oldSecurityProxyId != null) {
+            securityProxyName = DataFetcher.getSecurityProxyName(oldSecurityProxyId.toString(), objectStore);
+        }
         Iterator<?> fetchedSecurityProxies = DataFetcher.getSecurityProxy(fetchedDocument.getClassName() + netco_servco,
                 objectStore);
 
-        String oldSecurityProxyName = "", newSecurityProxyName;
+        String oldSecurityProxyName = "",/*Vecchio security_proxy*/ newSecurityProxyName /*Nuovo security_proxy*/;
         if (securityProxyName != null && securityProxyName.hasNext()) {
             RepositoryRow securityProxyRepository = (RepositoryRow) securityProxyName.next();
             Properties securityProxyProperties = securityProxyRepository.getProperties();
@@ -48,8 +62,11 @@ public class SecurityProxySetup {
             if (oldSecurityProxyName == null || oldSecurityProxyName.isEmpty()) {
                 logger.warn("There's no security_proxy found on document id: " + fetchedDocument.getProperties().getIdValue("ID")
                         + " security_proxy is null, trying insert a new security_proxy id: " + newSecurityProxyId + " name: " + newSecurityProxyName);
+                //HACK: Da vedere se lo imposta a null il campo.
+//                fetchedDocument.getProperties().putObjectValue(SECURITY_PROXY, null);
                 fetchedDocument.getProperties().putObjectValue(SECURITY_PROXY, securityProxy);
                 fetchedDocument.save(RefreshMode.REFRESH);
+                logger.info("saved!");
             }
             //Verifico se nella classe documentale e` gia` presente la security_proxy nuova
             //Per capirci: se nella classe documentale c'e` gia` la security proxy nuova
@@ -60,9 +77,13 @@ public class SecurityProxySetup {
             if (oldSecurityProxyName != null && !oldSecurityProxyName.equals(newSecurityProxyName)) {
                 logger.info("Replacing old security_proxy Id: " + oldSecurityProxyId + " name: " + oldSecurityProxyName +
                         " with new security_proxy Id: " + newSecurityProxyId + " name: " + newSecurityProxyName);
+                //HACK: Da vedere se lo imposta a null il campo.
+//                fetchedDocument.getProperties().putObjectValue(SECURITY_PROXY, null);
                 fetchedDocument.getProperties().putObjectValue(SECURITY_PROXY, securityProxy);
                 fetchedDocument.save(RefreshMode.REFRESH);
                 logger.info("saved!");
+            } else {
+                logger.info("There's already security_proxy set up. Moving towards next.");
             }
         } else {
             logger.error("THERE'S NO SECURITY_PROXY: " + fetchedDocument.getClassName() + netco_servco + " CREATED");

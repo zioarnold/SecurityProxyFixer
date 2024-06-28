@@ -22,6 +22,12 @@ public class Configurator {
     private HashMap<String, Boolean> documentMap;
     private ObjectStore objectStore;
     private boolean isMassive;
+    private String testConnection;
+    private boolean reWorkOldIds;
+    private boolean reWorkNulls;
+    private boolean count;
+    private boolean removeOldPermissions;
+    private ArrayList<String> ldapGroupToRemove;
 
     private Configurator() {
 
@@ -136,5 +142,53 @@ public class Configurator {
 
     public boolean isMassive() {
         return isMassive;
+    }
+
+    public void setTestConnection(String testConnection) {
+        this.testConnection = testConnection;
+    }
+
+    public String getTestConnection() {
+        return testConnection;
+    }
+
+    public void setReWorkOldIds(boolean reWorkOldIds) {
+        this.reWorkOldIds = reWorkOldIds;
+    }
+
+    public boolean getReWorkOldIds() {
+        return reWorkOldIds;
+    }
+
+    public void setReWorkNulls(boolean reWorkNulls) {
+        this.reWorkNulls = reWorkNulls;
+    }
+
+    public boolean isReWorkNulls() {
+        return reWorkNulls;
+    }
+
+    public void setCount(boolean count) {
+        this.count = count;
+    }
+
+    public boolean isCount() {
+        return count;
+    }
+
+    public void setRemoveOldPermissions(boolean removeOldPermissions) {
+        this.removeOldPermissions = removeOldPermissions;
+    }
+
+    public boolean isRemoveOldPermissions() {
+        return removeOldPermissions;
+    }
+
+    public void setLdapGroupToRemove(ArrayList<String> ldapGroupToRemove) {
+        this.ldapGroupToRemove = ldapGroupToRemove;
+    }
+
+    public ArrayList<String> getLdapGroupToRemove() {
+        return ldapGroupToRemove;
     }
 }

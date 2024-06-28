@@ -6,8 +6,10 @@ import com.filenet.api.core.Factory;
 import com.filenet.api.core.ObjectStore;
 import com.filenet.api.exception.EngineRuntimeException;
 import com.filenet.api.util.UserContext;
+import org.apache.commons.lang.time.DurationFormatUtils;
 import org.apache.log4j.Logger;
 import r2u.tools.config.Configurator;
+import r2u.tools.constants.Constants;
 import r2u.tools.worker.SecurityFixer;
 
 import javax.security.auth.Subject;
@@ -38,13 +40,27 @@ public class FNConnector {
         }
         if (objectStore != null) {
             instance.setObjectStore(objectStore);
-            securityFixer.startSecurityFix();
+            if (instance.getTestConnection().equalsIgnoreCase("no")) {
+                long startTime, endTime;
+                logger.info("Starting security fix...");
+                startTime = System.currentTimeMillis();
+                securityFixer.startSecurityFix();
+                endTime = System.currentTimeMillis();
+                logger.info("Security fixer terminated within: " + DurationFormatUtils.formatDuration(endTime - startTime, Constants.dateTimeFormat, true));
+                UserContext.get().popSubject();
+            }
         } else {
             logger.error("AFTER " + indexAttempt + " ATTEMPTS TO ESTABLISH THE CONNECTION TO: " + instance.getUriSource() + " PROGRAM IS ABORTED!");
             System.exit(-1);
         }
     }
 
+    /**
+     * Funzione atto a configurare la connessione verso object store d'interesse
+     *
+     * @param indexAttempt indice di tentativi
+     * @return restituisce oggetto ObjectStore oppure null quando non si riesce.
+     */
     private ObjectStore objectStoreSetUp(int indexAttempt) {
         Domain sourceDomain;
         Connection sourceConnection;
