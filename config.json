@@ -6,7 +6,11 @@
   "jaasStanzaName": "FileNetP8WSI",
   "documentClass": "Document,CustomObject",
   "query": "",
-  "isMassive": true,
+  "isMassive": "false",
+  "reWorkOldIds": "false",
+  "reWorkNulls": "false",
+  "count": "true",
+  "removeOldPermissions": "false",
   "objectClasses": [
     {
       "docClassList": [
@@ -22,5 +26,8 @@
         "system_id=_example_security"
       ]
     }
+  ],
+  "LDAPGroupToRemove": [
+    "CN=SOMENAME,OU=OFFICE,OU=HOME OFFICE,DC=HO,DC=ORG"
   ]
 }
