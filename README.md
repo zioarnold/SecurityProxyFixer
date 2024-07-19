@@ -1,4 +1,4 @@
-# SdiPurchasingSecurityFixer ver1.6 by MrArni_ZIO - Released
+# SdiPurchasingSecurityFixer ver1.8 by MrArni_ZIO - Released
 ### Description
 Tool dedicato a SdiAcquisti, sviluppato per fixare le security proxy e le security di classi documentali in base ai criteri.
 Nel suo funzionamento il Tool non fa altro che:<br>
@@ -42,6 +42,15 @@ Qui è piu' selettiva la questione. Ma ricordarsi dei flag `true/false`.
 ### query
 Puo' essere anche vuota, utile quando dovete processare i documenti per i lotti, ad esempio facendo delle select per le date
 maggiore uguale o minore uguale. Dato che il sql di filenet non supporta la `BETWEEN`. 
+### testConnection
+Accetta solo due valori: 'yes' o 'no'. Quando è a YES, allora fa verifica di connessione, null'altro. Se è a NO allora fa il resto.
+### reWork
+Quando dovete lavorare le classi documentali processati male, per dire, se security_proxy non è stato cambiato. Allora
+utilizzando docClassList li potete riprocessare.
+### isMassive
+Introdotto x lavorare massivamente o con la query.
+### removeOldPermissions
+Introdotto x lavorare massivamente sui permessi di security_proxy, verrà eliminato qualsiasi gruppo censito nella variabile `LDAPGroupToRemove`
 ### _usage_
 `java -jar path\filename.jar path\config.json`
 #### Nota
