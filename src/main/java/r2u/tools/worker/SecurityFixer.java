@@ -1,6 +1,7 @@
 package r2u.tools.worker;
 
 import com.filenet.api.collection.AccessPermissionList;
+import com.filenet.api.collection.PageIterator;
 import com.filenet.api.constants.RefreshMode;
 import com.filenet.api.core.CustomObject;
 import com.filenet.api.core.Document;
@@ -54,133 +55,267 @@ public class SecurityFixer {
                                 case "acq_all_doc_contratto":
                                 case "acq_contratto":
                                 case "acq_pos_contratto": {
-                                    //region counters
-                                    int noBuSecurityCounter = 0, noBuNetcoSecurityCounter = 0,
-                                            noBuServcoSecurityCounter = 0, nullSecurityCounter = 0;
-                                    //endregion
+                                    if (instance.isPagedIterator()) {
+                                        //region counters
+                                        int noBuSecurityCounter = 0, noBuNetcoSecurityCounter = 0,
+                                                noBuServcoSecurityCounter = 0, nullSecurityCounter = 0;
+                                        //endregion
 
-                                    //region NoBu
-                                    Iterator<?> noBU_Security = DataFetcher.getSecurityProxy(document + "_NO_BU_security", instance.getObjectStore());
-                                    if (noBU_Security != null && noBU_Security.hasNext()) {
-                                        RepositoryRow repositoryRow = (RepositoryRow) noBU_Security.next();
-                                        properties = repositoryRow.getProperties();
-                                    }
-                                    Iterator<?> noBuSecurity = DataFetcher.getDocumentClassBySecurityProxyId(document, Objects.requireNonNull(properties).getIdValue("Id").toString(), instance.getObjectStore());
-                                    logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
-                                    while (noBuSecurity != null && noBuSecurity.hasNext()) {
-                                        noBuSecurity.next();
-                                        noBuSecurityCounter++;
-                                    }
-                                    logger.info(document.toUpperCase() + "_NO_BU_SECURITY: " + noBuSecurityCounter);
-                                    //endregion
+                                        //region NoBu
+                                        Iterator<?> noBU_Security = DataFetcher.getSecurityProxy(document + "_NO_BU_security", instance.getObjectStore());
+                                        if (noBU_Security != null && noBU_Security.hasNext()) {
+                                            RepositoryRow repositoryRow = (RepositoryRow) noBU_Security.next();
+                                            properties = repositoryRow.getProperties();
+                                        }
+                                        PageIterator noBuSecurity = DataFetcher.getDocumentClassBySecurityProxyIdPaged(document,
+                                                Objects.requireNonNull(properties).getIdValue("Id").toString(),
+                                                instance.getObjectStore());
+                                        logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
+                                        while (noBuSecurity.nextPage()) {
+                                            noBuSecurityCounter += noBuSecurity.getElementCount();
+                                        }
+                                        logger.info(document.toUpperCase() + "_NO_BU_SECURITY: " + noBuSecurityCounter);
+                                        //endregion
 
-                                    //region NoBu_Netco
-                                    Iterator<?> noBuNetco_Security = DataFetcher.getSecurityProxy(document + "_NO_BU_netco_security", instance.getObjectStore());
-                                    if (noBuNetco_Security != null && noBuNetco_Security.hasNext()) {
-                                        RepositoryRow repositoryRow = (RepositoryRow) noBuNetco_Security.next();
-                                        properties = repositoryRow.getProperties();
-                                    }
-                                    Iterator<?> noBuNetco = DataFetcher.getDocumentClassBySecurityProxyId(document, Objects.requireNonNull(properties).getIdValue("Id").toString(), instance.getObjectStore());
-                                    logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
-                                    while (noBuNetco != null && noBuNetco.hasNext()) {
-                                        noBuNetco.next();
-                                        noBuNetcoSecurityCounter++;
-                                    }
-                                    logger.info(document.toUpperCase() + "_NO_BU_NETCO_SECURITY: " + noBuNetcoSecurityCounter);
-                                    //endregion
+                                        //region NoBu_Netco
+                                        Iterator<?> noBuNetco_Security = DataFetcher.getSecurityProxy(document + "_NO_BU_netco_security", instance.getObjectStore());
+                                        if (noBuNetco_Security != null && noBuNetco_Security.hasNext()) {
+                                            RepositoryRow repositoryRow = (RepositoryRow) noBuNetco_Security.next();
+                                            properties = repositoryRow.getProperties();
+                                        }
+                                        PageIterator noBuNetco = DataFetcher.getDocumentClassBySecurityProxyIdPaged(document,
+                                                Objects.requireNonNull(properties).getIdValue("Id").toString(),
+                                                instance.getObjectStore());
+                                        logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
+                                        while (noBuNetco.nextPage()) {
+                                            noBuNetcoSecurityCounter += noBuNetco.getElementCount();
+                                        }
+                                        logger.info(document.toUpperCase() + "_NO_BU_NETCO_SECURITY: " + noBuNetcoSecurityCounter);
+                                        //endregion
 
-                                    //region NoBu_Servco
-                                    Iterator<?> noBuServco_Security = DataFetcher.getSecurityProxy(document + "_NO_BU_servco_security", instance.getObjectStore());
-                                    if (noBuServco_Security != null && noBuServco_Security.hasNext()) {
-                                        RepositoryRow repositoryRow = (RepositoryRow) noBuServco_Security.next();
-                                        properties = repositoryRow.getProperties();
-                                    }
-                                    Iterator<?> noBuServco = DataFetcher.getDocumentClassBySecurityProxyId(document, Objects.requireNonNull(properties).getIdValue("Id").toString(), instance.getObjectStore());
-                                    logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
-                                    while (noBuServco != null && noBuServco.hasNext()) {
-                                        noBuServco.next();
-                                        noBuServcoSecurityCounter++;
-                                    }
-                                    logger.info(document.toUpperCase() + "_NO_BU_SERVCO_SECURITY: " + noBuServcoSecurityCounter);
-                                    //endregion
+                                        //region NoBu_Servco
+                                        Iterator<?> noBuServco_Security = DataFetcher.getSecurityProxy(document + "_NO_BU_servco_security", instance.getObjectStore());
+                                        if (noBuServco_Security != null && noBuServco_Security.hasNext()) {
+                                            RepositoryRow repositoryRow = (RepositoryRow) noBuServco_Security.next();
+                                            properties = repositoryRow.getProperties();
+                                        }
+                                        PageIterator noBuServco = DataFetcher.getDocumentClassBySecurityProxyIdPaged(document,
+                                                Objects.requireNonNull(properties).getIdValue("Id").toString(),
+                                                instance.getObjectStore());
+                                        logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
+                                        while (noBuServco.nextPage()) {
+                                            noBuServcoSecurityCounter += noBuServco.getElementCount();
+                                        }
+                                        logger.info(document.toUpperCase() + "_NO_BU_SERVCO_SECURITY: " + noBuServcoSecurityCounter);
+                                        //endregion
 
-                                    //region nullSecurity
-                                    Iterator<?> nullSecurity = DataFetcher.fetchDocumentWithNullSecurityProxy(document, instance.getObjectStore());
-                                    logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
-                                    while (nullSecurity != null && nullSecurity.hasNext()) {
-                                        nullSecurity.next();
-                                        nullSecurityCounter++;
+                                        //region nullSecurity
+                                        Iterator<?> nullSecurity = DataFetcher.fetchDocumentWithNullSecurityProxy(document, instance.getObjectStore());
+                                        logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
+                                        while (nullSecurity != null && nullSecurity.hasNext()) {
+                                            nullSecurity.next();
+                                            nullSecurityCounter++;
+                                        }
+                                        logger.info(document.toUpperCase() + " NULL SECURITY: " + nullSecurityCounter);
+                                        //endregion
+                                    } else {
+                                        //region counters
+                                        int noBuSecurityCounter = 0, noBuNetcoSecurityCounter = 0,
+                                                noBuServcoSecurityCounter = 0, nullSecurityCounter = 0;
+                                        //endregion
+
+                                        //region NoBu
+                                        Iterator<?> noBU_Security = DataFetcher.getSecurityProxy(document + "_NO_BU_security", instance.getObjectStore());
+                                        if (noBU_Security != null && noBU_Security.hasNext()) {
+                                            RepositoryRow repositoryRow = (RepositoryRow) noBU_Security.next();
+                                            properties = repositoryRow.getProperties();
+                                        }
+                                        Iterator<?> noBuSecurity = DataFetcher.getDocumentClassBySecurityProxyId(document,
+                                                Objects.requireNonNull(properties).getIdValue("Id").toString(),
+                                                instance.getObjectStore());
+                                        logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
+                                        while (noBuSecurity != null && noBuSecurity.hasNext()) {
+                                            noBuSecurity.next();
+                                            noBuSecurityCounter++;
+                                        }
+                                        logger.info(document.toUpperCase() + "_NO_BU_SECURITY: " + noBuSecurityCounter);
+                                        //endregion
+
+                                        //region NoBu_Netco
+                                        Iterator<?> noBuNetco_Security = DataFetcher.getSecurityProxy(document + "_NO_BU_netco_security", instance.getObjectStore());
+                                        if (noBuNetco_Security != null && noBuNetco_Security.hasNext()) {
+                                            RepositoryRow repositoryRow = (RepositoryRow) noBuNetco_Security.next();
+                                            properties = repositoryRow.getProperties();
+                                        }
+                                        Iterator<?> noBuNetco = DataFetcher.getDocumentClassBySecurityProxyId(document, Objects.requireNonNull(properties).getIdValue("Id").toString(), instance.getObjectStore());
+                                        logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
+                                        while (noBuNetco != null && noBuNetco.hasNext()) {
+                                            noBuNetco.next();
+                                            noBuNetcoSecurityCounter++;
+                                        }
+                                        logger.info(document.toUpperCase() + "_NO_BU_NETCO_SECURITY: " + noBuNetcoSecurityCounter);
+                                        //endregion
+
+                                        //region NoBu_Servco
+                                        Iterator<?> noBuServco_Security = DataFetcher.getSecurityProxy(document + "_NO_BU_servco_security", instance.getObjectStore());
+                                        if (noBuServco_Security != null && noBuServco_Security.hasNext()) {
+                                            RepositoryRow repositoryRow = (RepositoryRow) noBuServco_Security.next();
+                                            properties = repositoryRow.getProperties();
+                                        }
+                                        Iterator<?> noBuServco = DataFetcher.getDocumentClassBySecurityProxyId(document, Objects.requireNonNull(properties).getIdValue("Id").toString(), instance.getObjectStore());
+                                        logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
+                                        while (noBuServco != null && noBuServco.hasNext()) {
+                                            noBuServco.next();
+                                            noBuServcoSecurityCounter++;
+                                        }
+                                        logger.info(document.toUpperCase() + "_NO_BU_SERVCO_SECURITY: " + noBuServcoSecurityCounter);
+                                        //endregion
+
+                                        //region nullSecurity
+                                        Iterator<?> nullSecurity = DataFetcher.fetchDocumentWithNullSecurityProxy(document, instance.getObjectStore());
+                                        logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
+                                        while (nullSecurity != null && nullSecurity.hasNext()) {
+                                            nullSecurity.next();
+                                            nullSecurityCounter++;
+                                        }
+                                        logger.info(document.toUpperCase() + " NULL SECURITY: " + nullSecurityCounter);
+                                        //endregion
                                     }
-                                    logger.info(document.toUpperCase() + " NULL SECURITY: " + nullSecurityCounter);
-                                    //endregion
                                 }
                                 break;
                                 default: {
-                                    //region counters
-                                    int servcoSecurityCounter = 0, netcoSecurityCounter = 0,
-                                            defaultSecurityCounter = 0, nullSecurityCounter = 0;
-                                    //endregion
+                                    if (instance.isPagedIterator()) {
+                                        //region counters
+                                        int servcoSecurityCounter = 0, netcoSecurityCounter = 0,
+                                                defaultSecurityCounter = 0, nullSecurityCounter = 0;
+                                        //endregion
 
-                                    //region Servco_Security
-                                    Iterator<?> servco_security = DataFetcher.getSecurityProxy(document + "_servco_security", instance.getObjectStore());
-                                    if (servco_security != null && servco_security.hasNext()) {
-                                        RepositoryRow repositoryRow = (RepositoryRow) servco_security.next();
-                                        properties = repositoryRow.getProperties();
-                                    }
-                                    Iterator<?> servcoSecurity = DataFetcher.getDocumentClassBySecurityProxyId(document,
-                                            Objects.requireNonNull(properties).getIdValue("Id").toString(),
-                                            instance.getObjectStore());
-                                    logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
-                                    while (servcoSecurity != null && servcoSecurity.hasNext()) {
-                                        servcoSecurity.next();
-                                        servcoSecurityCounter++;
-                                    }
-                                    logger.info(document.toUpperCase() + "_SERVCO_SECURITY: " + servcoSecurityCounter);
-                                    //endregion
+                                        //region Servco_Security
+                                        Iterator<?> servco_security = DataFetcher.getSecurityProxy(document + "_servco_security", instance.getObjectStore());
+                                        if (servco_security != null && servco_security.hasNext()) {
+                                            RepositoryRow repositoryRow = (RepositoryRow) servco_security.next();
+                                            properties = repositoryRow.getProperties();
+                                        }
+                                        PageIterator servcoSecurity = DataFetcher.getDocumentClassBySecurityProxyIdPaged(document,
+                                                Objects.requireNonNull(properties).getIdValue("Id").toString(),
+                                                instance.getObjectStore());
 
-                                    //region Netco_Security
-                                    Iterator<?> netco_security = DataFetcher.getSecurityProxy(document + "_netco_security", instance.getObjectStore());
-                                    if (netco_security != null && netco_security.hasNext()) {
-                                        RepositoryRow repositoryRow = (RepositoryRow) netco_security.next();
-                                        properties = repositoryRow.getProperties();
-                                    }
-                                    Iterator<?> netcoSecurity = DataFetcher.getDocumentClassBySecurityProxyId(document,
-                                            Objects.requireNonNull(properties).getIdValue("Id").toString(),
-                                            instance.getObjectStore());
-                                    logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
-                                    while (netcoSecurity != null && netcoSecurity.hasNext()) {
-                                        netcoSecurity.next();
-                                        netcoSecurityCounter++;
-                                    }
-                                    logger.info(document.toUpperCase() + "_NETCO_SECURITY: " + netcoSecurityCounter);
-                                    //endregion
+                                        logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
+                                        while (servcoSecurity.nextPage()) {
+                                            servcoSecurityCounter += servcoSecurity.getElementCount();
+                                        }
+                                        logger.info(document.toUpperCase() + "_SERVCO_SECURITY: " + servcoSecurityCounter);
+                                        //endregion
 
-                                    //region Oda_Security
-                                    Iterator<?> oda_security = DataFetcher.getSecurityProxy(document + "_security", instance.getObjectStore());
-                                    if (oda_security != null && oda_security.hasNext()) {
-                                        RepositoryRow repositoryRow = (RepositoryRow) oda_security.next();
-                                        properties = repositoryRow.getProperties();
-                                    }
-                                    Iterator<?> defaultSecurity = DataFetcher.getDocumentClassBySecurityProxyId(document,
-                                            Objects.requireNonNull(properties).getIdValue("Id").toString(),
-                                            instance.getObjectStore());
-                                    logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
-                                    while (defaultSecurity != null && defaultSecurity.hasNext()) {
-                                        defaultSecurity.next();
-                                        defaultSecurityCounter++;
-                                    }
-                                    logger.info(document.toUpperCase() + "_SECURITY: " + defaultSecurityCounter);
-                                    //endregion
+                                        //region Netco_Security
+                                        Iterator<?> netco_security = DataFetcher.getSecurityProxy(document + "_netco_security", instance.getObjectStore());
+                                        if (netco_security != null && netco_security.hasNext()) {
+                                            RepositoryRow repositoryRow = (RepositoryRow) netco_security.next();
+                                            properties = repositoryRow.getProperties();
+                                        }
+                                        PageIterator netcoSecurity = DataFetcher.getDocumentClassBySecurityProxyIdPaged(document,
+                                                Objects.requireNonNull(properties).getIdValue("Id").toString(),
+                                                instance.getObjectStore());
+                                        logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
+                                        while (netcoSecurity.nextPage()) {
+                                            netcoSecurityCounter += netcoSecurity.getElementCount();
+                                        }
+                                        logger.info(document.toUpperCase() + "_NETCO_SECURITY: " + netcoSecurityCounter);
+                                        //endregion
 
-                                    //region nullSecurity
-                                    Iterator<?> nullSecurity = DataFetcher.fetchDocumentWithNullSecurityProxy(document, instance.getObjectStore());
-                                    while (nullSecurity != null && nullSecurity.hasNext()) {
-                                        nullSecurity.next();
-                                        nullSecurityCounter++;
+                                        //region Oda_Security
+                                        Iterator<?> oda_security = DataFetcher.getSecurityProxy(document + "_security", instance.getObjectStore());
+                                        if (oda_security != null && oda_security.hasNext()) {
+                                            RepositoryRow repositoryRow = (RepositoryRow) oda_security.next();
+                                            properties = repositoryRow.getProperties();
+                                        }
+                                        PageIterator defaultSecurity = DataFetcher.getDocumentClassBySecurityProxyIdPaged(document,
+                                                Objects.requireNonNull(properties).getIdValue("Id").toString(),
+                                                instance.getObjectStore());
+                                        logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
+                                        while (defaultSecurity.nextPage()) {
+                                            defaultSecurityCounter += defaultSecurity.getElementCount();
+                                        }
+                                        logger.info(document.toUpperCase() + "_SECURITY: " + defaultSecurityCounter);
+                                        //endregion
+
+                                        //region nullSecurity
+                                        Iterator<?> nullSecurity = DataFetcher.fetchDocumentWithNullSecurityProxy(document, instance.getObjectStore());
+                                        while (nullSecurity != null && nullSecurity.hasNext()) {
+                                            nullSecurity.next();
+                                            nullSecurityCounter++;
+                                        }
+                                        logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
+                                        logger.info(document.toUpperCase() + " NULL SECURITY: " + nullSecurityCounter);
+                                        //endregion
+                                    } else {
+                                        //region counters
+                                        int servcoSecurityCounter = 0, netcoSecurityCounter = 0,
+                                                defaultSecurityCounter = 0, nullSecurityCounter = 0;
+                                        //endregion
+
+                                        //region Servco_Security
+                                        Iterator<?> servco_security = DataFetcher.getSecurityProxy(document + "_servco_security", instance.getObjectStore());
+                                        if (servco_security != null && servco_security.hasNext()) {
+                                            RepositoryRow repositoryRow = (RepositoryRow) servco_security.next();
+                                            properties = repositoryRow.getProperties();
+                                        }
+                                        Iterator<?> servcoSecurity = DataFetcher.getDocumentClassBySecurityProxyId(document,
+                                                Objects.requireNonNull(properties).getIdValue("Id").toString(),
+                                                instance.getObjectStore());
+
+                                        logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
+                                        while (servcoSecurity != null && servcoSecurity.hasNext()) {
+                                            servcoSecurity.next();
+                                            servcoSecurityCounter++;
+                                        }
+                                        logger.info(document.toUpperCase() + "_SERVCO_SECURITY: " + servcoSecurityCounter);
+                                        //endregion
+
+                                        //region Netco_Security
+                                        Iterator<?> netco_security = DataFetcher.getSecurityProxy(document + "_netco_security", instance.getObjectStore());
+                                        if (netco_security != null && netco_security.hasNext()) {
+                                            RepositoryRow repositoryRow = (RepositoryRow) netco_security.next();
+                                            properties = repositoryRow.getProperties();
+                                        }
+                                        Iterator<?> netcoSecurity = DataFetcher.getDocumentClassBySecurityProxyId(document,
+                                                Objects.requireNonNull(properties).getIdValue("Id").toString(),
+                                                instance.getObjectStore());
+                                        logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
+                                        while (netcoSecurity != null && netcoSecurity.hasNext()) {
+                                            netcoSecurity.next();
+                                            netcoSecurityCounter++;
+                                        }
+                                        logger.info(document.toUpperCase() + "_NETCO_SECURITY: " + netcoSecurityCounter);
+                                        //endregion
+
+                                        //region Oda_Security
+                                        Iterator<?> oda_security = DataFetcher.getSecurityProxy(document + "_security", instance.getObjectStore());
+                                        if (oda_security != null && oda_security.hasNext()) {
+                                            RepositoryRow repositoryRow = (RepositoryRow) oda_security.next();
+                                            properties = repositoryRow.getProperties();
+                                        }
+                                        Iterator<?> defaultSecurity = DataFetcher.getDocumentClassBySecurityProxyId(document,
+                                                Objects.requireNonNull(properties).getIdValue("Id").toString(),
+                                                instance.getObjectStore());
+                                        logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
+                                        while (defaultSecurity != null && defaultSecurity.hasNext()) {
+                                            defaultSecurity.next();
+                                            defaultSecurityCounter++;
+                                        }
+                                        logger.info(document.toUpperCase() + "_SECURITY: " + defaultSecurityCounter);
+                                        //endregion
+
+                                        //region nullSecurity
+                                        Iterator<?> nullSecurity = DataFetcher.fetchDocumentWithNullSecurityProxy(document, instance.getObjectStore());
+                                        while (nullSecurity != null && nullSecurity.hasNext()) {
+                                            nullSecurity.next();
+                                            nullSecurityCounter++;
+                                        }
+                                        logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
+                                        logger.info(document.toUpperCase() + " NULL SECURITY: " + nullSecurityCounter);
+                                        //endregion
                                     }
-                                    logger.info("Query/queries executed, calculating the results... grab some tea, this may take a while");
-                                    logger.info(document.toUpperCase() + " NULL SECURITY: " + nullSecurityCounter);
-                                    //endregion
                                 }
                                 break;
                             }

@@ -25,7 +25,7 @@ public class SecurityProxySetup {
         //Vecchio ID del security proxy
         Id oldSecurityProxyId;
         //verifico se il campo non e` vuoto per assegnarlo
-        //TODO: Da capire come gestire - se e` da gestire
+        //leftoff: Da capire come gestire - se e` da gestire
         if (fetchedDocument.getProperties().getIdValue(SECURITY_PROXY) == null) {
             //e` vuoto quindi nulla da fare.
             logger.error("THERE'S NO SECURITY PROXY SET UP ON DOCUMENT: " + fetchedDocument.getClassName()
@@ -62,8 +62,8 @@ public class SecurityProxySetup {
             if (oldSecurityProxyName == null || oldSecurityProxyName.isEmpty()) {
                 logger.warn("There's no security_proxy found on document id: " + fetchedDocument.getProperties().getIdValue("ID")
                         + " security_proxy is null, trying insert a new security_proxy id: " + newSecurityProxyId + " name: " + newSecurityProxyName);
-                //HACK: Da vedere se lo imposta a null il campo.
-//                fetchedDocument.getProperties().putObjectValue(SECURITY_PROXY, null);
+                //HACK Decommentando la cosa sotto lo imposta a null il campo.
+                //HACK fetchedDocument.getProperties().putObjectValue(SECURITY_PROXY, null);
                 fetchedDocument.getProperties().putObjectValue(SECURITY_PROXY, securityProxy);
                 fetchedDocument.save(RefreshMode.REFRESH);
                 logger.info("saved!");
@@ -77,8 +77,8 @@ public class SecurityProxySetup {
             if (oldSecurityProxyName != null && !oldSecurityProxyName.equals(newSecurityProxyName)) {
                 logger.info("Replacing old security_proxy Id: " + oldSecurityProxyId + " name: " + oldSecurityProxyName +
                         " with new security_proxy Id: " + newSecurityProxyId + " name: " + newSecurityProxyName);
-                //HACK: Da vedere se lo imposta a null il campo.
-//                fetchedDocument.getProperties().putObjectValue(SECURITY_PROXY, null);
+                //HACK Decommentando la cosa sotto lo imposta a null il campo.
+                //HACK fetchedDocument.getProperties().putObjectValue(SECURITY_PROXY, null);
                 fetchedDocument.getProperties().putObjectValue(SECURITY_PROXY, securityProxy);
                 fetchedDocument.save(RefreshMode.REFRESH);
                 logger.info("saved!");

@@ -1,5 +1,6 @@
 package r2u.tools.utils;
 
+import com.filenet.api.collection.PageIterator;
 import com.filenet.api.collection.StringList;
 import com.filenet.api.core.ObjectStore;
 import com.filenet.api.query.SearchSQL;
@@ -24,6 +25,46 @@ public class DataFetcher {
         SearchSQL searchSQL = new SearchSQL();
         searchSQL.setQueryString(query);
         return new SearchScope(objectStore).fetchRows(searchSQL, null, null, Boolean.TRUE).iterator();
+    }
+
+    /**
+     * Restituisce i dati a seconda del parametro query
+     *
+     * @param query       contiene una query che viene recepito da config.json
+     * @param objectStore contiene i dati dell'object store
+     * @return oggetto di tipo Iterator per poi lavorarli uno x uno.
+     */
+    public static PageIterator fetchDataByQueryPaged(String query, ObjectStore objectStore) {
+        logger.info("Fetching data by query: " + query);
+        SearchSQL searchSQL = new SearchSQL();
+        searchSQL.setQueryString(query);
+        return new SearchScope(objectStore).fetchRows(searchSQL, 1000, null, Boolean.TRUE).pageIterator();
+    }
+
+    /**
+     * Restituisce i documenti che contengono la GUID del security_proxy
+     *
+     * @param docClass    classe documentale
+     * @param id          GUID di riferimento
+     * @param objectStore object store configurato
+     * @return iterator
+     */
+    public static PageIterator getDocumentClassBySecurityProxyIdJoined(String docClass, String id, ObjectStore objectStore) {
+        String querySource = "SELECT * FROM [" + docClass + "] INNER JOIN [acq_security_proxy] ON [" + docClass + "].[security_proxy] = [acq_security_proxy].[id] WHERE [security_proxy] = " + id;
+        return fetchDataByQueryPaged(querySource, objectStore);
+    }
+
+    /**
+     * Restituisce i documenti che contengono la GUID del security_proxy
+     *
+     * @param docClass    classe documentale
+     * @param id          GUID di riferimento
+     * @param objectStore object store configurato
+     * @return iterator
+     */
+    public static PageIterator getDocumentClassBySecurityProxyIdPaged(String docClass, String id, ObjectStore objectStore) {
+        String querySource = "SELECT * FROM [" + docClass + "] WHERE [security_proxy] = " + id;
+        return fetchDataByQueryPaged(querySource, objectStore);
     }
 
     /**

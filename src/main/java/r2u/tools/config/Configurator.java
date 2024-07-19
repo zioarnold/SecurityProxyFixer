@@ -28,6 +28,7 @@ public class Configurator {
     private boolean count;
     private boolean removeOldPermissions;
     private ArrayList<String> ldapGroupToRemove;
+    private boolean pagedIterator;
 
     private Configurator() {
 
@@ -190,5 +191,13 @@ public class Configurator {
 
     public ArrayList<String> getLdapGroupToRemove() {
         return ldapGroupToRemove;
+    }
+
+    public void setPagedIterator(boolean pagedIterator) {
+        this.pagedIterator = pagedIterator;
+    }
+
+    public boolean isPagedIterator() {
+        return pagedIterator;
     }
 }

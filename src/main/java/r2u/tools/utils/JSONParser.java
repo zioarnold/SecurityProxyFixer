@@ -34,7 +34,8 @@ public class JSONParser {
                 reWorkOldIds = jsonObject.getString("reWorkOldIds"),
                 reWorkNulls = jsonObject.getString("reWorkNulls"),
                 count = jsonObject.getString("count"),
-                removeOldPermissions = jsonObject.getString("removeOldPermissions");
+                removeOldPermissions = jsonObject.getString("removeOldPermissions"),
+                pagedIterator = jsonObject.getString("pagedIterator");
 
         //Converto in arraylist di stringhe e poi in un hashmap rispettivamente String|String o String|Boolean
         HashMap<String, Boolean> documentMap = Converters.convertArrayList2StringBooleanHashMap(
@@ -133,7 +134,7 @@ public class JSONParser {
             logger.error("removeOldPermissions is empty. Aborting!");
             System.exit(-1);
         }
-        if (ldapGroupToRemove.isEmpty()){
+        if (ldapGroupToRemove.isEmpty()) {
             logger.error("ldapGroupToRemove is empty. Aborting!");
             System.exit(-1);
         }
@@ -157,6 +158,7 @@ public class JSONParser {
         instance.setCount(Boolean.parseBoolean(count));
         instance.setRemoveOldPermissions(Boolean.parseBoolean(removeOldPermissions));
         instance.setLdapGroupToRemove(ldapGroupToRemove);
+        instance.setPagedIterator(Boolean.parseBoolean(pagedIterator));
         FNConnector fnConnector = new FNConnector();
         fnConnector.initWork();
     }
